@@ -651,163 +651,261 @@ function CoreMark({ size = 44, spin = false }) {
 // product photo/logo), one distinct shape per catalog key so items in a
 // list are visually distinguishable at a glance.
 // ---------------------------------------------------------------------------
+// Shared gradient defs for the 2.5D glyph set. `uid` keeps ids unique per
+// glyph instance so multiple icons on screen at once don't fight over the
+// same <linearGradient>/<radialGradient> definition.
+function GlyphDefs({ uid, color }) {
+  return (
+    <defs>
+      {/* top face: brightest, catches the "overhead light" */}
+      <linearGradient id={`${uid}-top`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#3A4A66" />
+        <stop offset="100%" stopColor="#1C2740" />
+      </linearGradient>
+      {/* front face: mid tone */}
+      <linearGradient id={`${uid}-front`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#141D33" />
+        <stop offset="100%" stopColor="#0A0F1E" />
+      </linearGradient>
+      {/* side face: darkest, in shadow */}
+      <linearGradient id={`${uid}-side`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#0A0F1C" />
+        <stop offset="100%" stopColor="#050810" />
+      </linearGradient>
+      {/* accent glow used for LEDs / fan hubs / active elements */}
+      <radialGradient id={`${uid}-glow`} cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stopColor={color} stopOpacity="0.95" />
+        <stop offset="60%" stopColor={color} stopOpacity="0.55" />
+        <stop offset="100%" stopColor={color} stopOpacity="0" />
+      </radialGradient>
+      {/* fan blade shading (used on GPU/rig fans) */}
+      <radialGradient id={`${uid}-fan`} cx="40%" cy="35%" r="70%">
+        <stop offset="0%" stopColor="#4A5A78" />
+        <stop offset="100%" stopColor="#0D1424" />
+      </radialGradient>
+    </defs>
+  );
+}
+
+// Isometric "mining box" body shared by all rig tiers — modeled loosely on
+// real ASIC/rack-miner chassis: a top face, a lit front face and a shaded
+// side face, so the icon reads as a physical box rather than a flat line glyph.
+function IsoRigShell({ uid, color, children }) {
+  return (
+    <>
+      {/* side face (right, in shadow) */}
+      <polygon points="50,46 85,28 85,68 50,86" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.25" strokeWidth="1.5" />
+      {/* front face (left, lit) */}
+      <polygon points="15,28 50,46 50,86 15,68" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.35" strokeWidth="1.5" />
+      {/* top face (brightest) */}
+      <polygon points="50,10 85,28 50,46 15,28" fill={`url(#${uid}-top)`} stroke={color} strokeOpacity="0.5" strokeWidth="1.5" />
+      {children}
+    </>
+  );
+}
+
 function HardwareGlyph({ id, color, size = 20 }) {
   const s = { width: size, height: size };
-  const stroke = { stroke: color, strokeWidth: 5, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" };
+  const uid = id || "glyph";
 
   switch (id) {
-    // ---- Rigs ----
+    // ---- Rigs: isometric mining-box chassis, tiers differ by front grille ----
     case "rig-starter":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="30" y="30" width="40" height="40" rx="6" {...stroke} />
-          <line x1="40" y1="20" x2="40" y2="30" {...stroke} />
-          <line x1="60" y1="20" x2="60" y2="30" {...stroke} />
-          <line x1="40" y1="70" x2="40" y2="80" {...stroke} />
-          <line x1="60" y1="70" x2="60" y2="80" {...stroke} />
-          <circle cx="50" cy="50" r="7" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* single fan on front face */}
+            <circle cx="32" cy="60" r="11" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.7" />
+            <circle cx="32" cy="60" r="3" fill={`url(#${uid}-glow)`} />
+            {/* status LED on top face */}
+            <circle cx="50" cy="24" r="2.4" fill={color} />
+          </IsoRigShell>
         </svg>
       );
     case "rig-pro":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="22" y="26" width="56" height="48" rx="8" {...stroke} />
-          <circle cx="50" cy="50" r="13" {...stroke} />
-          <line x1="50" y1="37" x2="50" y2="30" {...stroke} />
-          <line x1="63" y1="50" x2="70" y2="50" {...stroke} />
-          <line x1="50" y1="63" x2="50" y2="70" {...stroke} />
-          <line x1="37" y1="50" x2="30" y2="50" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* twin fans, slightly larger unit */}
+            <circle cx="27" cy="55" r="9" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.7" />
+            <circle cx="27" cy="55" r="2.4" fill={`url(#${uid}-glow)`} />
+            <circle cx="34" cy="74" r="9" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.7" />
+            <circle cx="34" cy="74" r="2.4" fill={`url(#${uid}-glow)`} />
+            <rect x="63" y="18" width="16" height="4" rx="1.5" fill={color} fillOpacity="0.7" />
+          </IsoRigShell>
         </svg>
       );
     case "rig-hyper":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="18" y="22" width="64" height="14" rx="3" {...stroke} />
-          <rect x="18" y="43" width="64" height="14" rx="3" {...stroke} />
-          <rect x="18" y="64" width="64" height="14" rx="3" {...stroke} />
-          <circle cx="72" cy="29" r="3" fill={color} />
-          <circle cx="72" cy="50" r="3" fill={color} />
-          <circle cx="72" cy="71" r="3" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* stacked rack unit: three fan rows referencing multi-tray rigs */}
+            <circle cx="30" cy="46" r="6.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.7" />
+            <circle cx="30" cy="63" r="6.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.7" />
+            <circle cx="30" cy="80" r="6.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.7" />
+            <circle cx="30" cy="46" r="1.8" fill={`url(#${uid}-glow)`} />
+            <circle cx="30" cy="63" r="1.8" fill={`url(#${uid}-glow)`} />
+            <circle cx="30" cy="80" r="1.8" fill={`url(#${uid}-glow)`} />
+            <rect x="60" y="16" width="20" height="3.5" rx="1.5" fill={color} fillOpacity="0.75" />
+          </IsoRigShell>
         </svg>
       );
     case "rig-quantum":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <polygon points="50,8 88,29 88,71 50,92 12,71 12,29" {...stroke} />
-          <polygon points="50,28 70,39 70,61 50,72 30,61 30,39" {...stroke} />
-          <circle cx="50" cy="50" r="6" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* hex core vent on the top face — flagship tier */}
+            <polygon points="50,18 60,23 60,33 50,38 40,33 40,23" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="1.5" />
+            <circle cx="33" cy="60" r="10" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.75" />
+            <circle cx="33" cy="60" r="2.6" fill={`url(#${uid}-glow)`} />
+          </IsoRigShell>
         </svg>
       );
 
-    // ---- Components (GPU-style cards) ----
+    // ---- Components: GPU card silhouette (shroud + fans + backplate edge),
+    // referencing the general shape of real graphics cards ----
     case "comp-rtx5060":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="15" y="34" width="70" height="32" rx="7" {...stroke} />
-          <circle cx="50" cy="50" r="11" {...stroke} />
-          <line x1="15" y1="26" x2="30" y2="26" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="10" y="20" width="14" height="14" rx="2" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.2" />
+          <rect x="12" y="34" width="76" height="34" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.55" />
+          <rect x="16" y="38" width="68" height="4" rx="2" fill={color} fillOpacity="0.3" />
+          <circle cx="50" cy="55" r="12" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.75" />
+          <circle cx="50" cy="55" r="3" fill={`url(#${uid}-glow)`} />
         </svg>
       );
     case "comp-rtx5080":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="12" y="34" width="76" height="32" rx="7" {...stroke} />
-          <circle cx="37" cy="50" r="10" {...stroke} />
-          <circle cx="63" cy="50" r="10" {...stroke} />
-          <line x1="12" y1="26" x2="30" y2="26" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="8" y="20" width="14" height="14" rx="2" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.2" />
+          <rect x="10" y="34" width="80" height="34" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.55" />
+          <rect x="14" y="38" width="72" height="4" rx="2" fill={color} fillOpacity="0.3" />
+          <circle cx="36" cy="55" r="10.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="64" cy="55" r="10.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="36" cy="55" r="2.6" fill={`url(#${uid}-glow)`} />
+          <circle cx="64" cy="55" r="2.6" fill={`url(#${uid}-glow)`} />
         </svg>
       );
     case "comp-rtx4090":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="10" y="36" width="80" height="30" rx="7" {...stroke} />
-          <circle cx="35" cy="51" r="9" {...stroke} />
-          <circle cx="65" cy="51" r="9" {...stroke} />
-          <line x1="20" y1="20" x2="20" y2="34" {...stroke} />
-          <line x1="30" y1="18" x2="30" y2="34" {...stroke} />
-          <line x1="70" y1="18" x2="70" y2="34" {...stroke} />
-          <line x1="80" y1="20" x2="80" y2="34" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          {/* power-connector pins along the top edge, like a real triple-fan card */}
+          <rect x="18" y="16" width="8" height="16" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="30" y="14" width="8" height="18" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="64" y="14" width="8" height="18" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="10" y="36" width="80" height="32" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
+          <circle cx="34" cy="52" r="10" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="66" cy="52" r="10" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="34" cy="52" r="2.5" fill={`url(#${uid}-glow)`} />
+          <circle cx="66" cy="52" r="2.5" fill={`url(#${uid}-glow)`} />
         </svg>
       );
     case "comp-rtx5090":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="8" y="38" width="84" height="28" rx="7" {...stroke} />
-          <circle cx="28" cy="52" r="8" {...stroke} />
-          <circle cx="50" cy="52" r="8" {...stroke} />
-          <circle cx="72" cy="52" r="8" {...stroke} />
-          <circle cx="50" cy="52" r="3" fill={color} />
-          <line x1="18" y1="20" x2="18" y2="36" {...stroke} />
-          <line x1="30" y1="16" x2="30" y2="36" {...stroke} />
-          <line x1="70" y1="16" x2="70" y2="36" {...stroke} />
-          <line x1="82" y1="20" x2="82" y2="36" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="16" y="14" width="7" height="20" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="28" y="12" width="7" height="22" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="65" y="12" width="7" height="22" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="77" y="14" width="7" height="20" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="8" y="38" width="84" height="30" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          <circle cx="28" cy="53" r="8.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="50" cy="53" r="8.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="72" cy="53" r="8.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="28" cy="53" r="2.2" fill={`url(#${uid}-glow)`} />
+          <circle cx="50" cy="53" r="2.6" fill={`url(#${uid}-glow)`} />
+          <circle cx="72" cy="53" r="2.2" fill={`url(#${uid}-glow)`} />
         </svg>
       );
 
-    // ---- Boosters ----
+    // ---- Boosters: kept symbolic (not physical hardware), given the same
+    // gradient/glow treatment so they sit visually consistent with the rest ----
     case "boost-poolswitch":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <path d="M25 38 H68 M68 38 L58 28 M68 38 L58 48" {...stroke} />
-          <path d="M75 62 H32 M32 62 L42 52 M32 62 L42 72" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="38" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.5" />
+          <path d="M25 38 H68 M68 38 L58 28 M68 38 L58 48" stroke={color} strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M75 62 H32 M32 62 L42 52 M32 62 L42 72" stroke={color} strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case "boost-braiinsos":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <circle cx="50" cy="50" r="30" {...stroke} />
-          <line x1="50" y1="14" x2="50" y2="24" {...stroke} />
-          <line x1="50" y1="76" x2="50" y2="86" {...stroke} />
-          <line x1="14" y1="50" x2="24" y2="50" {...stroke} />
-          <line x1="76" y1="50" x2="86" y2="50" {...stroke} />
-          <polygon points="54,32 40,54 49,54 46,68 62,46 52,46" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="38" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.5" />
+          <circle cx="50" cy="50" r="26" stroke={color} strokeWidth="4" fill="none" />
+          <line x1="50" y1="18" x2="50" y2="27" stroke={color} strokeWidth="4" strokeLinecap="round" />
+          <line x1="50" y1="73" x2="50" y2="82" stroke={color} strokeWidth="4" strokeLinecap="round" />
+          <line x1="18" y1="50" x2="27" y2="50" stroke={color} strokeWidth="4" strokeLinecap="round" />
+          <line x1="73" y1="50" x2="82" y2="50" stroke={color} strokeWidth="4" strokeLinecap="round" />
+          <polygon points="54,34 42,54 49,54 46,66 60,46 52,46" fill={`url(#${uid}-glow)`} />
         </svg>
       );
     case "boost-immersion":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <path d="M50 14 C64 36 74 50 74 66 C74 82 63 92 50 92 C37 92 26 82 26 66 C26 50 36 36 50 14 Z" {...stroke} />
-          <path d="M36 62 Q43 57 50 62 T64 62" {...stroke} />
-          <path d="M36 74 Q43 69 50 74 T64 74" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="38" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.5" />
+          <path d="M50 18 C62 38 70 50 70 64 C70 78 61 87 50 87 C39 87 30 78 30 64 C30 50 38 38 50 18 Z" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="3" />
+          <path d="M38 62 Q44 58 50 62 T62 62" stroke={color} strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M38 72 Q44 68 50 72 T62 72" stroke={color} strokeWidth="3" fill="none" strokeLinecap="round" />
         </svg>
       );
     case "boost-hydroovc":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <path d="M50 46 C60 60 67 70 67 80 C67 89 59 95 50 95 C41 95 33 89 33 80 C33 70 40 60 50 46 Z" {...stroke} />
-          <path d="M50 8 L50 34 M50 8 L40 20 M50 8 L60 20" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="38" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.5" />
+          <path d="M50 44 C59 57 65 66 65 76 C65 84 58 90 50 90 C42 90 35 84 35 76 C35 66 41 57 50 44 Z" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="3" />
+          <path d="M50 14 L50 36 M50 14 L41 24 M50 14 L59 24" stroke={color} strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
 
-    // ---- Energy packs ----
+    // ---- Energy packs: 2.5D battery/cell block with beveled top ----
     case "pack-quickcharge":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <circle cx="50" cy="50" r="34" {...stroke} />
-          <polygon points="55,25 35,55 48,55 45,78 68,44 53,44" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="38" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.5" />
+          <circle cx="50" cy="50" r="27" fill="none" stroke={color} strokeWidth="3" strokeOpacity="0.5" />
+          <polygon points="56,24 33,56 47,56 43,80 68,46 52,46" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="1.5" />
         </svg>
       );
     case "pack-powercell":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="18" y="32" width="58" height="36" rx="6" {...stroke} />
-          <rect x="76" y="42" width="8" height="16" rx="2" fill={color} />
-          <rect x="24" y="38" width="18" height="24" rx="2" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="16" y="16" width="56" height="10" rx="2" fill={`url(#${uid}-top)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.2" />
+          <rect x="16" y="26" width="56" height="46" rx="6" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.55" />
+          <rect x="74" y="42" width="9" height="18" rx="2.5" fill={color} fillOpacity="0.75" />
+          <rect x="23" y="34" width="16" height="30" rx="2" fill={`url(#${uid}-glow)`} />
         </svg>
       );
     case "pack-fullcharge":
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <rect x="14" y="32" width="58" height="36" rx="6" {...stroke} />
-          <rect x="72" y="42" width="8" height="16" rx="2" fill={color} />
-          <rect x="20" y="38" width="46" height="24" rx="2" fill={color} />
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="12" y="16" width="60" height="10" rx="2" fill={`url(#${uid}-top)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.2" />
+          <rect x="12" y="26" width="60" height="46" rx="6" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.55" />
+          <rect x="72" y="42" width="9" height="18" rx="2.5" fill={color} fillOpacity="0.75" />
+          <rect x="19" y="34" width="46" height="30" rx="2" fill={`url(#${uid}-glow)`} />
         </svg>
       );
 
     default:
       return (
         <svg viewBox="0 0 100 100" {...s}>
-          <circle cx="50" cy="50" r="30" {...stroke} />
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="30" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="4" strokeOpacity="0.6" />
+          <circle cx="50" cy="50" r="10" fill={`url(#${uid}-glow)`} />
         </svg>
       );
   }
@@ -906,55 +1004,125 @@ function PackIcon({ packKey, rarity = "common", size = 40 }) {
 }
 
 // Stylised mining-rig hardware graphic used as the Home tab hero image.
-function RigDevice() {
+// Renders an isometric "mining box" (top/front/side faces, like RigIcon's
+// IsoRigShell) whose slot cells and overall glow react to the rig's real
+// installed components — empty slots stay dark, filled slots light up in
+// their component's rarity color, and glow intensity scales with how many
+// slots are filled and how rare they are.
+function RigDevice({ rig }) {
+  const slots = rig?.slots || [];
+  const slotCount = slots.length || 4;
+  const filled = slots.filter(Boolean);
+
+  // Dominant rarity = highest-rarity installed component; drives glow color.
+  const RARITY_ORDER = ["common", "rare", "epic", "legendary"];
+  let dominant = null;
+  filled.forEach((slot) => {
+    const comp = COMPONENT_CATALOG.find((c) => c.key === slot.key);
+    if (!comp) return;
+    if (!dominant || RARITY_ORDER.indexOf(comp.rarity) > RARITY_ORDER.indexOf(dominant)) {
+      dominant = comp.rarity;
+    }
+  });
+  const glowColor = dominant ? RARITY_STYLE[dominant].color : C.cyan;
+  const fillRatio = slotCount ? filled.length / slotCount : 0;
+  const glowBlur = 18 + fillRatio * 26;
+  const uid = "rigdevice";
+
+  // Up to 6 slot cells laid out on the chassis front face; extras are hidden
+  // rather than drawn off-panel if a rig somehow has more.
+  const cellPositions = [
+    [30, 50], [50, 58], [70, 66],
+    [30, 68], [50, 76], [70, 84],
+  ].slice(0, Math.min(slotCount, 6));
+
   return (
     <div
-      className="relative w-full overflow-hidden rounded-xl"
+      className="relative w-full overflow-hidden rounded-xl flex items-center justify-center"
       style={{
         aspectRatio: "16/9",
         background: "linear-gradient(160deg, #101A2C, #05070E)",
-        border: `1px solid ${C.blue}33`,
+        border: `1px solid ${glowColor}33`,
+        boxShadow: filled.length ? `0 0 ${glowBlur}px -12px ${glowColor}88 inset` : undefined,
+        perspective: 700,
       }}
     >
       <div
         className="absolute inset-0"
-        style={{ background: `radial-gradient(circle at 28% 35%, ${C.blue}3A, transparent 60%)` }}
+        style={{ background: `radial-gradient(circle at 50% 78%, ${glowColor}${filled.length ? "33" : "1A"}, transparent 60%)` }}
       />
-      {/* LED edge strip */}
       <div
-        className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
-        style={{ background: `linear-gradient(180deg, ${C.orange}, ${C.cyan})`, boxShadow: `0 0 10px 1px ${C.orange}AA` }}
-      />
-      {/* chassis panel */}
-      <div
-        className="absolute inset-x-6 inset-y-4 rounded-lg flex items-center justify-center gap-4"
         style={{
-          background: "linear-gradient(180deg, #131E33, #090D17)",
-          border: `1px solid ${C.cyan}22`,
+          position: "relative",
+          width: "62%",
+          aspectRatio: "1/0.72",
+          transformStyle: "preserve-3d",
+          transform: "rotateX(38deg) rotateZ(-32deg)",
+          animation: filled.length ? "core-float 4.5s ease-in-out infinite" : "none",
         }}
       >
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="rounded-full flex items-center justify-center"
-            style={{ width: 30, height: 30, border: `2px solid ${C.cyan}99`, boxShadow: `0 0 10px 2px ${C.cyan}55` }}
-          >
-            <div
-              className="rounded-full"
-              style={{ width: 8, height: 8, background: C.cyan, boxShadow: `0 0 8px 2px ${C.cyan}` }}
-            />
-          </div>
-        ))}
+        <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: "visible" }}>
+          <defs>
+            <linearGradient id={`${uid}-top`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#3A4A66" />
+              <stop offset="100%" stopColor="#1C2740" />
+            </linearGradient>
+            <linearGradient id={`${uid}-front`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#141D33" />
+              <stop offset="100%" stopColor="#0A0F1E" />
+            </linearGradient>
+            <linearGradient id={`${uid}-side`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#0A0F1C" />
+              <stop offset="100%" stopColor="#050810" />
+            </linearGradient>
+          </defs>
+          {/* side face */}
+          <polygon points="50,46 85,28 85,68 50,86" fill={`url(#${uid}-side)`} stroke={glowColor} strokeOpacity="0.3" strokeWidth="1.5" />
+          {/* front face */}
+          <polygon points="15,28 50,46 50,86 15,68" fill={`url(#${uid}-front)`} stroke={glowColor} strokeOpacity="0.4" strokeWidth="1.5" />
+          {/* top face */}
+          <polygon points="50,10 85,28 50,46 15,28" fill={`url(#${uid}-top)`} stroke={glowColor} strokeOpacity="0.55" strokeWidth="1.5" />
+          {/* slot cells on the front face, one per rig component slot */}
+          {cellPositions.map(([cx, cy], i) => {
+            const slot = slots[i];
+            const comp = slot ? COMPONENT_CATALOG.find((c) => c.key === slot.key) : null;
+            const cellColor = comp ? RARITY_STYLE[comp.rarity].color : "#2A3550";
+            return (
+              <rect
+                key={i}
+                x={cx - 6}
+                y={cy - 5}
+                width="12"
+                height="10"
+                rx="2.5"
+                fill={comp ? `${cellColor}33` : "rgba(255,255,255,0.03)"}
+                stroke={cellColor}
+                strokeWidth={comp ? 1.4 : 1}
+                strokeOpacity={comp ? 0.9 : 0.35}
+                style={comp ? { filter: `drop-shadow(0 0 4px ${cellColor}AA)` } : undefined}
+              />
+            );
+          })}
+          {/* status LED on the top face */}
+          <circle cx="50" cy="24" r="2.6" fill={filled.length ? glowColor : "#3A4560"} />
+        </svg>
       </div>
       <div className="absolute top-2.5 left-4 text-[10px] font-extrabold tracking-[0.2em] text-white/60">
         CORE
       </div>
       <div
         className="absolute bottom-3 left-4 flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold"
-        style={{ background: "rgba(5,7,14,0.75)", border: `1px solid ${C.green}55`, color: C.green }}
+        style={
+          filled.length
+            ? { background: "rgba(5,7,14,0.75)", border: `1px solid ${glowColor}66`, color: glowColor }
+            : { background: "rgba(5,7,14,0.75)", border: "1px solid #4A556855", color: "#8FA3B8" }
+        }
       >
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.green, boxShadow: `0 0 6px 1px ${C.green}` }} />
-        Mining Active
+        <span
+          className="w-1.5 h-1.5 rounded-full"
+          style={filled.length ? { background: glowColor, boxShadow: `0 0 6px 1px ${glowColor}` } : { background: "#4A5568" }}
+        />
+        {filled.length ? "Mining Active" : "No components installed"}
       </div>
     </div>
   );
@@ -966,7 +1134,7 @@ function RigHero({ rig }) {
   const photo = rig ? ASSET_URLS.rigs[rig.key] : null;
   const rar = rig ? RARITY_STYLE[rig.rarity] : RARITY_STYLE.common;
 
-  if (!photo) return <RigDevice />;
+  if (!photo) return <RigDevice rig={rig} />;
 
   return (
     <div
@@ -2258,6 +2426,10 @@ export default function CoreMiningApp() {
           0% { box-shadow: 0 0 0 0 rgba(0,229,255,0.45); }
           70% { box-shadow: 0 0 0 14px rgba(0,229,255,0); }
           100% { box-shadow: 0 0 0 0 rgba(0,229,255,0); }
+        }
+        @keyframes core-float {
+          0%, 100% { transform: rotateX(38deg) rotateZ(-32deg) translateY(0px); }
+          50% { transform: rotateX(38deg) rotateZ(-32deg) translateY(-8px); }
         }
       `}</style>
 
