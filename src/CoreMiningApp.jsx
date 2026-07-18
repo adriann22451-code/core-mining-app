@@ -451,6 +451,11 @@ const GENESIS_DATE = new Date("2026-01-01T00:00:00Z").getTime();
 // stay exactly as designed. Combine with NEW_MINER_BOOST_* below for the
 // temporary onboarding lift — that one is time-limited, this one isn't.
 const NETWORK_BASE_HASHRATE = 34000;
+// Baseline simulated headcount of other independent miners on the network,
+// used only to drive the "active miners" live stat display (see
+// networkActiveMiners below) — purely presentational, doesn't affect
+// difficulty/reward math the way NETWORK_BASE_HASHRATE does.
+const NETWORK_BASE_MINERS = 18400;
 
 // New-account onboarding lift (separate from the permanent dial above).
 // Applies only for the first NEW_MINER_BOOST_HOURS of an account's life,
@@ -1722,6 +1727,18 @@ export default function CoreMiningApp() {
   const networkRewardRate =
     networkHashrateTotal > 0 ? (schedule.emissionPerSecond * 3600) / networkHashrateTotal : 0;
 
+  // "Active miners" — a simulated live headcount for the network status
+  // display (there's no real multi-user backend here, so this is modeled
+  // the same way networkBaseHashrate is: a slow genesis-anchored growth
+  // curve plus a gentle day/night sine wave, so the number feels alive
+  // tick to tick without needing a server round-trip).
+  const daysSinceGenesis = Math.max(0, (nowTick - GENESIS_DATE) / 86400000);
+  const networkActiveMiners = Math.round(
+    NETWORK_BASE_MINERS *
+      (1 + daysSinceGenesis * 0.006) *
+      (1 + 0.05 * Math.sin(nowTick / 900000) + 0.02 * Math.sin(nowTick / 137000))
+  );
+
   const incomePerHour =
     activeOwned.reduce((sum, r) => sum + rigEffectivePower(r) * networkRewardRate, 0) *
     componentBoostMultiplier *
@@ -2525,6 +2542,7 @@ export default function CoreMiningApp() {
           schedule={schedule}
           networkHashrateTotal={networkHashrateTotal}
           networkRewardRate={networkRewardRate}
+          networkActiveMiners={networkActiveMiners}
           miningPower={miningPower}
           poolSynergyBonusPct={poolSynergyBonusPct}
           joinedPool={joinedPool}
@@ -2569,6 +2587,7 @@ export default function CoreMiningApp() {
             poolInfo={joinedPool ? { name: joinedPool.name, feePct: joinedPool.feePct, isOwner: isPoolOwner } : null}
             schedule={schedule}
             networkHashrateTotal={networkHashrateTotal}
+            networkActiveMiners={networkActiveMiners}
             onOpenNetwork={() => { haptic("light"); setShowNetworkModal(true); }}
             user={user}
             onOpenProfile={() => { haptic("light"); setTab("profile"); }}
@@ -2700,7 +2719,7 @@ export default function CoreMiningApp() {
 // ---------------------------------------------------------------------------
 // HOME
 // ---------------------------------------------------------------------------
-function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, onOpenNetwork, user, onOpenProfile }) {
+function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, networkActiveMiners, onOpenNetwork, user, onOpenProfile }) {
   const boosterMinsLeft = activeBooster ? Math.max(0, Math.round((activeBooster.expiresAt - nowTick) / 60000)) : 0;
   const autoTopRig = owned && owned.length
     ? [...owned].sort((a, b) => b.basePower * (1 + (b.level - 1) * 0.18) - a.basePower * (1 + (a.level - 1) * 0.18))[0]
@@ -2811,20 +2830,85 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
 
       <div className="px-4 mt-2">
         <button className="w-full text-left" onClick={onOpenNetwork}>
-          <GlowCard accent={C.blue} className="p-3">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <Database size={13} color={C.blue} /> Year {schedule.yearNumber} halving
+          <div
+            className="relative overflow-hidden rounded-2xl p-4"
+            style={{
+              background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 60%, #060911 100%)",
+              border: `1px solid ${C.blue}33`,
+              boxShadow: `0 16px 34px -18px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)`,
+            }}
+          >
+            {/* faint scanning glow */}
+            <div
+              className="absolute -top-10 -right-10 w-32 h-32 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, ${C.blue}22, transparent 70%)` }}
+            />
+
+            <div className="flex items-center justify-between relative">
+              <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-slate-300">
+                <Database size={13} color={C.blue} /> NETWORK · Year {schedule.yearNumber} halving
               </span>
-              <span style={{ color: C.blue }}>Network →</span>
-            </div>
-            <div className="flex items-center justify-between mt-1.5 text-[11px] text-slate-500">
-              <span>
-                {fmt(schedule.totalMined, 0)} / {fmt(MINING_POOL_SUPPLY, 0)} CORE mined
+              <span className="flex items-center gap-1 text-[10px] font-extrabold" style={{ color: C.green }}>
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: C.green, boxShadow: `0 0 6px 2px ${C.green}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
+                />
+                LIVE
               </span>
-              <span className="tabular-nums">{fmt(networkHashrateTotal, 0)} TH/s network</span>
             </div>
-          </GlowCard>
+
+            {/* supply progress */}
+            <div className="mt-3 relative">
+              <div className="flex items-end justify-between mb-1">
+                <span className="text-white font-extrabold text-base tabular-nums">
+                  {fmt(schedule.totalMined, 0)}
+                </span>
+                <span className="text-slate-500 text-[10px] tabular-nums">
+                  / {fmt(MINING_POOL_SUPPLY, 0)} CORE
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div
+                  className="h-full rounded-full relative"
+                  style={{
+                    width: `${schedule.percentMined}%`,
+                    background: `linear-gradient(90deg, ${C.cyan}, ${C.blue})`,
+                    boxShadow: `0 0 8px 1px ${C.cyan}88`,
+                  }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
+                      width: "40%",
+                      animation: "core-scan 2.4s linear infinite",
+                    }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">{schedule.percentMined.toFixed(2)}% mined · {schedule.daysToHalving}d to next halving</p>
+            </div>
+
+            {/* live stat tiles */}
+            <div className="grid grid-cols-2 gap-2 mt-3 relative">
+              <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <Users size={12} color={C.green} /> Active Miners
+                </div>
+                <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkActiveMiners, 0)}</p>
+              </div>
+              <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <Gauge size={12} color={C.cyan} /> Network Hashrate
+                </div>
+                <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkHashrateTotal, 0)} TH/s</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end mt-2 relative">
+              <span className="text-[10px] font-semibold" style={{ color: C.blue }}>Full network stats →</span>
+            </div>
+          </div>
         </button>
       </div>
 
@@ -4827,7 +4911,7 @@ function PoolDetailModal({ pool, joinedPoolId, miningPower, poolIncomePerHour, o
 // ---------------------------------------------------------------------------
 // NETWORK STATS
 // ---------------------------------------------------------------------------
-function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRewardRate, miningPower, poolSynergyBonusPct, joinedPool }) {
+function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRewardRate, networkActiveMiners, miningPower, poolSynergyBonusPct, joinedPool }) {
   const yourSharePct = networkHashrateTotal > 0 ? (miningPower / networkHashrateTotal) * 100 : 0;
   const allocRows = [
     { label: "Mining (halving)", pct: ALLOCATION_PCT.mining, amount: MINING_POOL_SUPPLY, color: C.cyan },
@@ -4843,8 +4927,24 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
       onClick={onClose}
     >
       <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
-        <GlowCard accent={C.blue} brackets className="p-5">
-          <div className="flex items-center justify-between mb-1">
+        <div
+          className="relative overflow-hidden rounded-2xl p-5"
+          style={{
+            background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 55%, #060911 100%)",
+            border: `1px solid ${C.blue}44`,
+            boxShadow: "0 30px 60px -25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
+          }}
+        >
+          <div
+            className="absolute -top-16 -right-16 w-56 h-56 rounded-full pointer-events-none"
+            style={{ background: `radial-gradient(circle, ${C.blue}22, transparent 70%)` }}
+          />
+          <div
+            className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full pointer-events-none"
+            style={{ background: `radial-gradient(circle, ${C.cyan}18, transparent 70%)` }}
+          />
+
+          <div className="flex items-center justify-between mb-1 relative">
             <div className="flex items-center gap-2">
               <Database size={16} color={C.blue} />
               <h2 className="text-white font-extrabold text-sm tracking-wide">NETWORK STATUS</h2>
@@ -4853,24 +4953,52 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
               <X size={18} color="#5B6B82" />
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mb-3">Max supply {fmt(MAX_SUPPLY, 0)} CORE</p>
+          <div className="flex items-center gap-1.5 mb-3 relative">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: C.green, boxShadow: `0 0 6px 2px ${C.green}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
+            />
+            <span className="text-[10px] font-extrabold tracking-wide" style={{ color: C.green }}>LIVE</span>
+            <span className="text-[11px] text-slate-500">· Max supply {fmt(MAX_SUPPLY, 0)} CORE</span>
+          </div>
 
-          <div className="mb-3">
+          <div className="mb-4 relative">
             <div className="flex justify-between text-[11px] text-slate-400 mb-1">
               <span>Mining pool mined</span>
-              <span className="tabular-nums" style={{ color: C.cyan }}>
+              <span className="tabular-nums font-bold" style={{ color: C.cyan }}>
                 {fmt(schedule.totalMined, 0)} / {fmt(MINING_POOL_SUPPLY, 0)} ({schedule.percentMined.toFixed(2)}%)
               </span>
             </div>
-            <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
               <div
-                className="h-full rounded-full"
-                style={{ width: `${schedule.percentMined}%`, background: `linear-gradient(90deg, ${C.cyan}, ${C.blue})` }}
-              />
+                className="h-full rounded-full relative"
+                style={{ width: `${schedule.percentMined}%`, background: `linear-gradient(90deg, ${C.cyan}, ${C.blue})`, boxShadow: `0 0 10px 1px ${C.cyan}88` }}
+              >
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
+                    width: "35%",
+                    animation: "core-scan 2.4s linear infinite",
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-2 mb-3 relative">
+            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                <Users size={12} color={C.green} /> Active Miners
+              </div>
+              <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkActiveMiners, 0)}</p>
+            </div>
+            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                <Gauge size={12} color={C.cyan} /> Network Hashrate
+              </div>
+              <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkHashrateTotal, 0)} TH/s</p>
+            </div>
             <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
               <p className="text-[10px] text-slate-500">Halving Year</p>
               <p className="text-white font-bold text-sm tabular-nums">Year {schedule.yearNumber}</p>
@@ -4884,25 +5012,19 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
               <p className="text-white font-bold text-sm tabular-nums">{fmt(schedule.emissionThisYear, 0)}</p>
             </div>
             <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <p className="text-[10px] text-slate-500">Network Hashrate</p>
-              <p className="text-white font-bold text-sm tabular-nums">{fmt(networkHashrateTotal, 0)} TH/s</p>
+              <p className="text-[10px] text-slate-500">Reward Rate</p>
+              <p className="text-white font-bold text-sm tabular-nums">{networkRewardRate.toFixed(4)}/TH/hr</p>
             </div>
           </div>
 
           <div
-            className="rounded-xl p-3 mb-3"
+            className="rounded-xl p-3 mb-3 relative"
             style={{ background: `${C.green}0F`, border: `1px solid ${C.green}33` }}
           >
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-slate-400">Your network share</span>
               <span className="font-bold tabular-nums" style={{ color: C.green }}>
                 {yourSharePct.toFixed(4)}%
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[11px] mt-1">
-              <span className="text-slate-400">Reward rate</span>
-              <span className="font-bold tabular-nums" style={{ color: C.green }}>
-                {networkRewardRate.toFixed(4)} CORE / TH/s / hr
               </span>
             </div>
             {joinedPool && (
@@ -4915,8 +5037,8 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
             )}
           </div>
 
-          <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide">GENESIS ALLOCATION</p>
-          <div className="flex flex-col gap-1.5 mb-1">
+          <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide relative">GENESIS ALLOCATION</p>
+          <div className="flex flex-col gap-1.5 mb-1 relative">
             {allocRows.map((r) => (
               <div key={r.label} className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 text-slate-400">
@@ -4929,7 +5051,7 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
               </div>
             ))}
           </div>
-        </GlowCard>
+        </div>
       </div>
     </div>
   );
