@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
+import { TonConnectButton, useTonAddress } from "@tonconnect/ui-react";
 import {
   Home, Store, Package, ArrowUpCircle, User, Zap, Database,
   Gift, Trophy, Users, Target, ChevronLeft, Bell, Settings, Sparkles,
@@ -77,6 +78,11 @@ const TRANSLATIONS = {
   settings_help_toast: { en: "Opening support chat...", id: "Membuka obrolan dukungan...", es: "Abriendo chat de soporte...", pt: "Abrindo chat de suporte...", ru: "Открытие чата поддержки...", zh: "正在打开支持聊天…" },
   settings_privacy_toast: { en: "Opening Privacy Policy...", id: "Membuka Kebijakan Privasi...", es: "Abriendo política de privacidad...", pt: "Abrindo política de privacidade...", ru: "Открытие политики конфиденциальности...", zh: "正在打开隐私政策…" },
   settings_terms_toast: { en: "Opening Terms of Service...", id: "Membuka Ketentuan Layanan...", es: "Abriendo términos de servicio...", pt: "Abrindo termos de serviço...", ru: "Открытие условий обслуживания...", zh: "正在打开服务条款…" },
+
+  // Wallet
+  wallet_title: { en: "TON Wallet", id: "Dompet TON", es: "Billetera TON", pt: "Carteira TON", ru: "TON-кошелёк", zh: "TON 钱包" },
+  wallet_connected_desc: { en: "Your wallet is linked to this account.", id: "Dompet kamu sudah terhubung ke akun ini.", es: "Tu billetera está vinculada a esta cuenta.", pt: "Sua carteira está vinculada a esta conta.", ru: "Ваш кошелёк привязан к этому аккаунту.", zh: "您的钱包已关联到此账户。" },
+  wallet_disconnected_desc: { en: "Connect your TON wallet to prepare for CORE withdrawals.", id: "Sambungkan dompet TON kamu untuk persiapan penarikan CORE.", es: "Conecta tu billetera TON para preparar retiros de CORE.", pt: "Conecte sua carteira TON para preparar saques de CORE.", ru: "Подключите TON-кошелёк для будущего вывода CORE.", zh: "连接您的 TON 钱包，为提现 CORE 做准备。" },
 };
 
 const LanguageContext = createContext({ language: "en", t: (key) => (TRANSLATIONS[key]?.en ?? key) });
@@ -4028,6 +4034,8 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
     ? [user.first_name, user.last_name].filter(Boolean).join(" ")
     : "CORE Miner";
   const displayId = user ? `TG-${user.id}` : "ID: CORE-78321";
+  const { t } = useLanguage();
+  const tonAddress = useTonAddress();
 
   return (
     <div>
@@ -4086,6 +4094,26 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
           <div className="text-right">
             <p className="text-slate-400 text-[11px]">Mining Power</p>
             <p className="text-white font-bold tabular-nums text-sm">{fmt(miningPower)} TH/s</p>
+          </div>
+        </GlowCard>
+      </div>
+
+      <div className="px-4 mt-3">
+        <GlowCard accent={C.blue} className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-white font-bold text-xs flex items-center gap-1.5">
+                <Database size={14} color={C.blue} /> {t("wallet_title")}
+              </p>
+              <p className="text-slate-500 text-[10px] mt-1 truncate">
+                {tonAddress
+                  ? `${tonAddress.slice(0, 6)}...${tonAddress.slice(-4)}`
+                  : t("wallet_disconnected_desc")}
+              </p>
+            </div>
+            <div className="shrink-0">
+              <TonConnectButton />
+            </div>
           </div>
         </GlowCard>
       </div>
