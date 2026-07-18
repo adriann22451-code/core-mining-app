@@ -439,8 +439,12 @@ const YEAR1_EMISSION = 20_000_000;
 const HALVING_RATE = 0.5;
 const SECONDS_PER_YEAR = 365 * 24 * 3600;
 const YEAR_MS = SECONDS_PER_YEAR * 1000;
-// Network launch date the halving clock counts from.
-const GENESIS_DATE = new Date("2026-01-01T00:00:00Z").getTime();
+// Network launch date the halving clock counts from. Set to the app's
+// actual go-live date — everything (totalMined, percentMined, yearNumber,
+// daysToHalving) is computed as elapsed time since this instant, so moving
+// it forward resets the mined-supply counter back down toward 0 instead of
+// showing months of backdated progress from an old placeholder date.
+const GENESIS_DATE = new Date("2026-07-19T00:00:00Z").getTime();
 // Simulated hashrate from every other independent (non-pooled) miner on the
 // network — drives difficulty even when this player owns little hashrate.
 // Rebalance pass: lowered from 48,000 so networkRewardRate (CORE per TH/s
@@ -456,6 +460,10 @@ const NETWORK_BASE_HASHRATE = 34000;
 // networkActiveMiners below) — purely presentational, doesn't affect
 // difficulty/reward math the way NETWORK_BASE_HASHRATE does.
 const NETWORK_BASE_MINERS = 18400;
+// How many active miners are simulated to exist right at genesis (a handful
+// of early/founding miners) — networkActiveMiners grows from this number up
+// toward NETWORK_BASE_MINERS over time instead of starting fully "mature".
+const MINER_LAUNCH_COUNT = 7;
 
 // New-account onboarding lift (separate from the permanent dial above).
 // Applies only for the first NEW_MINER_BOOST_HOURS of an account's life,
@@ -1729,13 +1737,17 @@ export default function CoreMiningApp() {
 
   // "Active miners" — a simulated live headcount for the network status
   // display (there's no real multi-user backend here, so this is modeled
-  // the same way networkBaseHashrate is: a slow genesis-anchored growth
-  // curve plus a gentle day/night sine wave, so the number feels alive
-  // tick to tick without needing a server round-trip).
+  // the same way networkBaseHashrate is: a curve anchored to GENESIS_DATE
+  // plus a gentle sine wave for tick-to-tick liveliness). Starts small
+  // (a handful of genesis miners) right after launch and grows toward the
+  // NETWORK_BASE_MINERS plateau over ~1-2 months, so it doesn't jump
+  // straight to a large "mature network" number the instant mining opens.
   const daysSinceGenesis = Math.max(0, (nowTick - GENESIS_DATE) / 86400000);
+  const minerGrowthProgress = 1 - Math.exp(-daysSinceGenesis / 30); // 0 at day 0, ~95% by ~day 90
+  const networkActiveMinersBase =
+    MINER_LAUNCH_COUNT + (NETWORK_BASE_MINERS - MINER_LAUNCH_COUNT) * minerGrowthProgress;
   const networkActiveMiners = Math.round(
-    NETWORK_BASE_MINERS *
-      (1 + daysSinceGenesis * 0.006) *
+    networkActiveMinersBase *
       (1 + 0.05 * Math.sin(nowTick / 900000) + 0.02 * Math.sin(nowTick / 137000))
   );
 
