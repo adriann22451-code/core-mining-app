@@ -1287,10 +1287,33 @@ function Toast({ toast }) {
 }
 
 // ---------------------------------------------------------------------------
+// SAVE / LOAD (localStorage)
+// ---------------------------------------------------------------------------
+// This build has no backend/database, so all progress previously lived only
+// in React state — it reset to the hardcoded demo values every time the Mini
+// App was closed and reopened (that's why balance/daily-streak never seemed
+// to change). We now persist progress to the browser's localStorage, keyed
+// per device. It does NOT sync across devices — a real multi-device account
+// system would need a backend (e.g. keyed by the Telegram user id).
+const SAVE_KEY = "core_miner_save_v1";
+function loadSavedGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+// ---------------------------------------------------------------------------
 // MAIN APP
 // ---------------------------------------------------------------------------
 export default function CoreMiningApp() {
   const { tg, user, isTelegram, haptic: hapticRaw, hapticNotify: hapticNotifyRaw } = useTelegram();
+  // Read the saved game once per mount (lazy ref, not re-read every render).
+  const savedGameRef = useRef(null);
+  if (savedGameRef.current === null) savedGameRef.current = loadSavedGame();
+  const savedGame = savedGameRef.current;
 
   // ---- Settings -------------------------------------------------------------
   // Music/SFX are stored preferences only (this build has no audio assets
@@ -1298,11 +1321,11 @@ export default function CoreMiningApp() {
   // something: Vibration gates every haptic()/hapticNotify() call below, and
   // Language is what a future i18n pass would read.
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [musicOn, setMusicOn] = useState(true);
-  const [sfxOn, setSfxOn] = useState(true);
-  const [vibrationOn, setVibrationOn] = useState(true);
-  const [notificationsOn, setNotificationsOn] = useState(true);
-  const [language, setLanguage] = useState("en");
+  const [musicOn, setMusicOn] = useState(savedGame.musicOn ?? true);
+  const [sfxOn, setSfxOn] = useState(savedGame.sfxOn ?? true);
+  const [vibrationOn, setVibrationOn] = useState(savedGame.vibrationOn ?? true);
+  const [notificationsOn, setNotificationsOn] = useState(savedGame.notificationsOn ?? true);
+  const [language, setLanguage] = useState(savedGame.language ?? "en");
   const t = useCallback(makeTranslator(language), [language]);
   // Wrapping here means every existing haptic("light")/hapticNotify(...)
   // call site elsewhere in the app automatically respects the Vibration
@@ -1310,16 +1333,16 @@ export default function CoreMiningApp() {
   const haptic = useCallback((style) => { if (vibrationOn) hapticRaw(style); }, [vibrationOn, hapticRaw]);
   const hapticNotify = useCallback((type) => { if (vibrationOn) hapticNotifyRaw(type); }, [vibrationOn, hapticNotifyRaw]);
   const [tab, setTab] = useState("home");
-  const [balance, setBalance] = useState(24.85);
-  const [pending, setPending] = useState(0);
-  const [energy, setEnergy] = useState(460); // ~92% of MAX_ENERGY_KWH, same starting fraction as before
+  const [balance, setBalance] = useState(savedGame.balance ?? 24.85);
+  const [pending, setPending] = useState(savedGame.pending ?? 0);
+  const [energy, setEnergy] = useState(savedGame.energy ?? 460); // ~92% of MAX_ENERGY_KWH, same starting fraction as before
   // storageCap is derived below (after income is computed) — see effectiveIncomePerHour.
   // (Storage % itself is now derived directly from pending/storageCap below,
   // not tracked as separate state — see storagePct.)
-  const [level, setLevel] = useState(12);
-  const [xp, setXp] = useState(8540);
+  const [level, setLevel] = useState(savedGame.level ?? 12);
+  const [xp, setXp] = useState(savedGame.xp ?? 8540);
   const xpToNext = 12000 + level * 400;
-  const [totalEarned, setTotalEarned] = useState(1248.35);
+  const [totalEarned, setTotalEarned] = useState(savedGame.totalEarned ?? 1248.35);
   const [toast, setToast] = useState(null);
   // Store the selected rig's ID, not the rig object itself — otherwise
   // toggling/repairing/upgrading a rig updates `owned` but this old object
@@ -1329,30 +1352,30 @@ export default function CoreMiningApp() {
   const [selectedRigId, setSelectedRigId] = useState(null);
   const [marketFilter, setMarketFilter] = useState("Rigs");
 
-  const [owned, setOwned] = useState([
+  const [owned, setOwned] = useState(savedGame.owned ?? [
     { id: "seed-quantum-1", key: "quantum", name: "Quantum Rig", rarity: "legendary", level: 5, basePower: 82, baseCost: 11800, durability: 95, active: true, slots: [ { key: "rtx5090", durability: 100 }, { key: "rtx4090", durability: 100 }, null, null, null, null, null, null ] },
     { id: "seed-hyper-1", key: "hyper", name: "Hyper Rig", rarity: "epic", level: 4, basePower: 34, baseCost: 5600, durability: 88, active: true, slots: Array(SLOT_CAPACITY.epic).fill(null) },
     { id: "seed-pro-1", key: "pro", name: "Pro Rig", rarity: "rare", level: 3, basePower: 12.5, baseCost: 2200, durability: 100, active: true, slots: Array(SLOT_CAPACITY.rare).fill(null) },
   ]);
   const selectedRig = (selectedRigId && owned.find((r) => r.id === selectedRigId)) || null;
-  const [componentInventory, setComponentInventory] = useState({}); // { [componentKey]: [{id, durability}] }
-  const [featuredRigId, setFeaturedRigId] = useState(null); // manually pinned rig instance for Home hero
-  const [activeBooster, setActiveBooster] = useState(null); // { key, name, boostPct, expiresAt }
+  const [componentInventory, setComponentInventory] = useState(savedGame.componentInventory ?? {}); // { [componentKey]: [{id, durability}] }
+  const [featuredRigId, setFeaturedRigId] = useState(savedGame.featuredRigId ?? null); // manually pinned rig instance for Home hero
+  const [activeBooster, setActiveBooster] = useState(savedGame.activeBooster ?? null); // { key, name, boostPct, expiresAt }
   const [nowTick, setNowTick] = useState(Date.now());
   // Real elapsed-time tracker for the tick effect below — using an actual
   // timestamp delta (instead of assuming exactly 1s passed) keeps energy
   // drain/durability wear correct even if the browser throttles the timer
   // (e.g. a backgrounded tab), instead of silently falling behind.
   const lastTickRef = useRef(Date.now());
-  const [dailyStreak, setDailyStreak] = useState(3); // demo: already a few days into a streak
+  const [dailyStreak, setDailyStreak] = useState(savedGame.dailyStreak ?? 3); // demo default: only used on a fresh install
   const [lastClaimDate, setLastClaimDate] = useState(
-    new Date(Date.now() - 86400000).toDateString() // demo: last claimed yesterday, ready today
+    savedGame.lastClaimDate ?? new Date(Date.now() - 86400000).toDateString() // demo default: last claimed yesterday, ready today
   );
   const [showDailyModal, setShowDailyModal] = useState(false);
-  const [repairsCount, setRepairsCount] = useState(0);
-  const [achievementsClaimed, setAchievementsClaimed] = useState([]);
-  const [missionProgress, setMissionProgress] = useState({ claims: 0, purchases: 0, upgrades: 0 });
-  const [missionClaimed, setMissionClaimed] = useState([]);
+  const [repairsCount, setRepairsCount] = useState(savedGame.repairsCount ?? 0);
+  const [achievementsClaimed, setAchievementsClaimed] = useState(savedGame.achievementsClaimed ?? []);
+  const [missionProgress, setMissionProgress] = useState(savedGame.missionProgress ?? { claims: 0, purchases: 0, upgrades: 0 });
+  const [missionClaimed, setMissionClaimed] = useState(savedGame.missionClaimed ?? []);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [showMissionsModal, setShowMissionsModal] = useState(false);
   const missionDateRef = useRef(new Date().toDateString());
@@ -1366,32 +1389,68 @@ export default function CoreMiningApp() {
   // Demo-seeded so the modal isn't empty on a fresh install — see the
   // REFERRAL_MILESTONES comment above for how this should be populated for
   // real users.
-  const [invitedFriends, setInvitedFriends] = useState([
+  const [invitedFriends, setInvitedFriends] = useState(savedGame.invitedFriends ?? [
     { id: "ref-demo-1", name: "Bagas", joinedAt: Date.now() - 86400000 * 6 },
     { id: "ref-demo-2", name: "Wulan", joinedAt: Date.now() - 86400000 * 2 },
   ]);
-  const [referralMilestonesClaimed, setReferralMilestonesClaimed] = useState([]);
+  const [referralMilestonesClaimed, setReferralMilestonesClaimed] = useState(savedGame.referralMilestonesClaimed ?? []);
   const [showReferralModal, setShowReferralModal] = useState(false);
 
-  const [pools, setPools] = useState(INITIAL_POOLS);
-  const [joinedPoolId, setJoinedPoolId] = useState(null);
+  const [pools, setPools] = useState(savedGame.pools ?? INITIAL_POOLS);
+  const [joinedPoolId, setJoinedPoolId] = useState(savedGame.joinedPoolId ?? null);
   const [showCreatePoolModal, setShowCreatePoolModal] = useState(false);
   const [selectedPoolId, setSelectedPoolId] = useState(null);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
-  const [listings, setListings] = useState(INITIAL_LISTINGS);
+  const [listings, setListings] = useState(savedGame.listings ?? INITIAL_LISTINGS);
   const [showSellModal, setShowSellModal] = useState(false);
   const yourDisplayName = user?.first_name || "You";
 
   // ---- Onboarding boost ---------------------------------------------------
-  // In production, accountCreatedAt should come from the backend (account
-  // creation timestamp) and welcomeGrantClaimed from a persisted per-user
-  // flag — both hardcoded here to "now"/false since this preview has no
-  // auth/backend and always mounts fresh. Real seeded owned/balance state
-  // above represents an existing mid-game demo account, not a true new user.
-  const [accountCreatedAt] = useState(() => Date.now());
-  const [welcomeGrantClaimed, setWelcomeGrantClaimed] = useState(false);
+  // accountCreatedAt/welcomeGrantClaimed now come from the local save (see
+  // SAVE_KEY below) when one exists, and only fall back to "now"/false for a
+  // genuinely fresh install.
+  const [accountCreatedAt] = useState(() => savedGame.accountCreatedAt ?? Date.now());
+  const [welcomeGrantClaimed, setWelcomeGrantClaimed] = useState(savedGame.welcomeGrantClaimed ?? false);
   const newMinerBoostActive = nowTick - accountCreatedAt < NEW_MINER_BOOST_HOURS * 3600 * 1000;
   const newMinerMultiplier = newMinerBoostActive ? 1 + NEW_MINER_BOOST_PCT / 100 : 1;
+
+  // ---- Persistence ----------------------------------------------------------
+  // Keep a ref that always mirrors the latest game state (cheap — just an
+  // assignment on every render, no re-render triggered by it) and flush it to
+  // localStorage on an interval plus whenever the Mini App is
+  // backgrounded/closed, instead of writing on every single state change
+  // (balance/energy tick every ~1s, which would mean writing every second).
+  const persistRef = useRef({});
+  persistRef.current = {
+    balance, pending, energy, level, xp, totalEarned, owned, componentInventory,
+    featuredRigId, activeBooster, dailyStreak, lastClaimDate, repairsCount,
+    achievementsClaimed, missionProgress, missionClaimed, invitedFriends,
+    referralMilestonesClaimed, pools, joinedPoolId, listings,
+    musicOn, sfxOn, vibrationOn, notificationsOn, language,
+    accountCreatedAt, welcomeGrantClaimed,
+  };
+  useEffect(() => {
+    const save = () => {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(persistRef.current));
+      } catch {
+        // localStorage can throw (private mode, quota, etc.) — safe to ignore,
+        // just means this particular save attempt is skipped.
+      }
+    };
+    const id = setInterval(save, 5000);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("beforeunload", save);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("beforeunload", save);
+      save();
+    };
+  }, []);
 
   const notify = useCallback((msg, type = "success") => {
     setToast({ msg, type });
