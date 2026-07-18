@@ -348,9 +348,13 @@ const REFERRAL_MILESTONES = [
   { key: "ref_200", label: "Syndicate Leader", desc: "Invite 200 friends to CORE.", target: 200, reward: 100, xp: 160 },
 ];
 
-// Bot username used to build the shareable invite link — replace with your
-// actual bot's @username before shipping.
-const BOT_USERNAME = "core_mining_bot";
+// Bot username + Mini App short name used to build the shareable invite
+// link. Telegram Mini App deep links need the form
+// t.me/<bot_username>/<app_short_name>?startapp=<code> — a plain
+// t.me/<bot_username>?startapp=<code> link opens the bot chat instead of
+// the Mini App itself, which was the bug (wrong/incomplete link).
+const BOT_USERNAME = "COREMin_bot";
+const MINI_APP_SHORT_NAME = "coreminer";
 
 // Pool mining: miners combine hashrate and split income by hashrate share.
 // The owner pays POOL_CREATE_COST to open a pool and can set a royalty fee
@@ -1710,7 +1714,7 @@ export default function CoreMiningApp() {
 
   const closeAchievementsModal = useCallback(() => setShowAchievementsModal(false), []);
 
-  const referralLink = `https://t.me/${BOT_USERNAME}?startapp=${referralCode}`;
+  const referralLink = `https://t.me/${BOT_USERNAME}/${MINI_APP_SHORT_NAME}?startapp=${referralCode}`;
 
   // Same stable-ref pattern as claimAchievement/closeAchievementsModal above —
   // required so ReferralModal (now React.memo'd below) can actually skip the
