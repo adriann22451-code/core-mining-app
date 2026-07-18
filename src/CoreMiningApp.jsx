@@ -364,36 +364,13 @@ function makeBotMembers(idPrefix, hashrates) {
   }));
 }
 
-// Seed pools so Browse Pools isn't empty on a fresh install.
-const INITIAL_POOLS = [
-  {
-    id: "pool-nova",
-    name: "Nova Collective",
-    ownerId: "system-nova",
-    ownerName: "NovaAdmin",
-    feePct: 5,
-    createdAt: Date.now() - 86400000 * 12,
-    members: makeBotMembers("nova", [42, 38, 55, 29, 61, 18, 47, 33]),
-  },
-  {
-    id: "pool-vertex",
-    name: "Vertex Syndicate",
-    ownerId: "system-vertex",
-    ownerName: "VertexOwner",
-    feePct: 8,
-    createdAt: Date.now() - 86400000 * 30,
-    members: makeBotMembers("vertex", [95, 120, 80, 140, 60, 110, 75, 130, 90, 105]),
-  },
-  {
-    id: "pool-genesis",
-    name: "Genesis Co-op",
-    ownerId: "system-genesis",
-    ownerName: "GenesisOwner",
-    feePct: 0,
-    createdAt: Date.now() - 86400000 * 5,
-    members: makeBotMembers("genesis", [12, 9, 15, 7, 11]),
-  },
-];
+// Was seeded with 3 bot-run pools (Nova Collective, Vertex Syndicate,
+// Genesis Co-op) so Browse Pools wasn't empty on a fresh install. Emptied
+// per request — Pools now starts empty for everyone until real pools exist
+// (via a backend or players creating their own).
+const INITIAL_POOLS = [];
+
+
 
 // ---------------------------------------------------------------------------
 // P2P MARKETPLACE
@@ -406,57 +383,11 @@ const INITIAL_POOLS = [
 // for the full data model and transaction flow this is a client-only demo of.
 const MARKETPLACE_FEE_PCT = 5;
 
-// Seed listings so Marketplace isn't empty on a fresh install — simulates
-// other players selling used gear. Real listings (yours, and other real
-// players') would come from a backend; these bot ones never disappear on
-// their own since there's no server here to keep restocking them.
-const INITIAL_LISTINGS = [
-  {
-    id: "listing-seed-1",
-    sellerId: "bot-1",
-    sellerName: "Rian",
-    itemType: "rig",
-    item: { key: "pro", name: "Pro Rig", rarity: "rare", basePower: 12.5, level: 3, durability: 76 },
-    price: 1450,
-    listedAt: Date.now() - 3600000 * 5,
-  },
-  {
-    id: "listing-seed-2",
-    sellerId: "bot-2",
-    sellerName: "Nadia",
-    itemType: "rig",
-    item: { key: "hyper", name: "Hyper Rig", rarity: "epic", basePower: 34, level: 2, durability: 91 },
-    price: 3900,
-    listedAt: Date.now() - 3600000 * 11,
-  },
-  {
-    id: "listing-seed-3",
-    sellerId: "bot-3",
-    sellerName: "Toni",
-    itemType: "rig",
-    item: { key: "starter", name: "Starter Rig", rarity: "common", basePower: 4.2, level: 4, durability: 58 },
-    price: 340,
-    listedAt: Date.now() - 3600000 * 2,
-  },
-  {
-    id: "listing-seed-4",
-    sellerId: "bot-4",
-    sellerName: "Gita",
-    itemType: "component",
-    item: { key: "rtx5080", name: "RTX 5080", rarity: "rare" },
-    price: 1380,
-    listedAt: Date.now() - 3600000 * 8,
-  },
-  {
-    id: "listing-seed-5",
-    sellerId: "bot-5",
-    sellerName: "Made",
-    itemType: "component",
-    item: { key: "rtx4090", name: "RTX 4090", rarity: "epic" },
-    price: 2350,
-    listedAt: Date.now() - 3600000 * 20,
-  },
-];
+// Was seeded with 5 bot listings (Rian, Nadia, Toni, Gita, Made) so
+// Marketplace wasn't empty on a fresh install. Emptied per request —
+// Marketplace now starts empty for everyone until real players list real
+// gear (or a backend feeds in real listings).
+const INITIAL_LISTINGS = [];
 
 const fmt = (n, d = 2) =>
   n >= 1000
@@ -1378,10 +1309,14 @@ export default function CoreMiningApp() {
   // drain/durability wear correct even if the browser throttles the timer
   // (e.g. a backgrounded tab), instead of silently falling behind.
   const lastTickRef = useRef(Date.now());
-  const [dailyStreak, setDailyStreak] = useState(savedGame.dailyStreak ?? 3); // demo default: only used on a fresh install
-  const [lastClaimDate, setLastClaimDate] = useState(
-    savedGame.lastClaimDate ?? new Date(Date.now() - 86400000).toDateString() // demo default: last claimed yesterday, ready today
-  );
+  // Was: dailyStreak defaulted to 3 with lastClaimDate defaulted to
+  // "yesterday", so dailyCurrentDay = (3 % 7) + 1 = 4 for every new user —
+  // the daily bonus opened straight to Day 4 instead of Day 1. Defaulting
+  // both to "never claimed" (streak 0, no last-claim date) makes
+  // streakContinuing false on a fresh install, so dailyCurrentDay correctly
+  // falls through to 1.
+  const [dailyStreak, setDailyStreak] = useState(savedGame.dailyStreak ?? 0);
+  const [lastClaimDate, setLastClaimDate] = useState(savedGame.lastClaimDate ?? null);
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [repairsCount, setRepairsCount] = useState(savedGame.repairsCount ?? 0);
   const [achievementsClaimed, setAchievementsClaimed] = useState(savedGame.achievementsClaimed ?? []);
@@ -1397,13 +1332,12 @@ export default function CoreMiningApp() {
   const [referralCode] = useState(() =>
     user?.id ? `CORE${user.id}` : `CORE${Math.floor(100000 + Math.random() * 900000)}`
   );
-  // Demo-seeded so the modal isn't empty on a fresh install — see the
-  // REFERRAL_MILESTONES comment above for how this should be populated for
-  // real users.
-  const [invitedFriends, setInvitedFriends] = useState(savedGame.invitedFriends ?? [
-    { id: "ref-demo-1", name: "Bagas", joinedAt: Date.now() - 86400000 * 6 },
-    { id: "ref-demo-2", name: "Wulan", joinedAt: Date.now() - 86400000 * 2 },
-  ]);
+  // Was seeded with 2 fake friends (Bagas, Wulan) so the modal wasn't empty
+  // on a fresh install — but that also counted toward this new user's real
+  // referral milestone progress (see invitedFriends.length checks below).
+  // Starts empty now; a real user's referred-friends list should only ever
+  // come from actual referral signups via the backend.
+  const [invitedFriends, setInvitedFriends] = useState(savedGame.invitedFriends ?? []);
   const [referralMilestonesClaimed, setReferralMilestonesClaimed] = useState(savedGame.referralMilestonesClaimed ?? []);
   const [showReferralModal, setShowReferralModal] = useState(false);
 
