@@ -1333,16 +1333,25 @@ export default function CoreMiningApp() {
   const haptic = useCallback((style) => { if (vibrationOn) hapticRaw(style); }, [vibrationOn, hapticRaw]);
   const hapticNotify = useCallback((type) => { if (vibrationOn) hapticNotifyRaw(type); }, [vibrationOn, hapticNotifyRaw]);
   const [tab, setTab] = useState("home");
-  const [balance, setBalance] = useState(savedGame.balance ?? 24.85);
+  // NOTE: these used to default to hardcoded "demo showcase" numbers
+  // (balance 24.85, level 12, xp 8540, totalEarned 1248.35) so the app never
+  // looked empty in screenshots. But for an actual new user (no savedGame
+  // yet) those demo numbers became their real starting stats, and — since
+  // the welcome-grant effect below ADDS its bonus on top of `balance`
+  // instead of setting it — a new user ended up with 24.85 + 10 CORE
+  // instead of just the intended 10 CORE welcome grant. Starting everyone
+  // at true zero/starter values means the welcome grant is the only thing
+  // that sets a new user's starting balance/rig, as intended.
+  const [balance, setBalance] = useState(savedGame.balance ?? 0);
   const [pending, setPending] = useState(savedGame.pending ?? 0);
   const [energy, setEnergy] = useState(savedGame.energy ?? 460); // ~92% of MAX_ENERGY_KWH, same starting fraction as before
   // storageCap is derived below (after income is computed) — see effectiveIncomePerHour.
   // (Storage % itself is now derived directly from pending/storageCap below,
   // not tracked as separate state — see storagePct.)
-  const [level, setLevel] = useState(savedGame.level ?? 12);
-  const [xp, setXp] = useState(savedGame.xp ?? 8540);
+  const [level, setLevel] = useState(savedGame.level ?? 1);
+  const [xp, setXp] = useState(savedGame.xp ?? 0);
   const xpToNext = 12000 + level * 400;
-  const [totalEarned, setTotalEarned] = useState(savedGame.totalEarned ?? 1248.35);
+  const [totalEarned, setTotalEarned] = useState(savedGame.totalEarned ?? 0);
   const [toast, setToast] = useState(null);
   // Store the selected rig's ID, not the rig object itself — otherwise
   // toggling/repairing/upgrading a rig updates `owned` but this old object
@@ -1352,11 +1361,13 @@ export default function CoreMiningApp() {
   const [selectedRigId, setSelectedRigId] = useState(null);
   const [marketFilter, setMarketFilter] = useState("Rigs");
 
-  const [owned, setOwned] = useState(savedGame.owned ?? [
-    { id: "seed-quantum-1", key: "quantum", name: "Quantum Rig", rarity: "legendary", level: 5, basePower: 82, baseCost: 11800, durability: 95, active: true, slots: [ { key: "rtx5090", durability: 100 }, { key: "rtx4090", durability: 100 }, null, null, null, null, null, null ] },
-    { id: "seed-hyper-1", key: "hyper", name: "Hyper Rig", rarity: "epic", level: 4, basePower: 34, baseCost: 5600, durability: 88, active: true, slots: Array(SLOT_CAPACITY.epic).fill(null) },
-    { id: "seed-pro-1", key: "pro", name: "Pro Rig", rarity: "rare", level: 3, basePower: 12.5, baseCost: 2200, durability: 100, active: true, slots: Array(SLOT_CAPACITY.rare).fill(null) },
-  ]);
+  // Was previously seeded with 3 demo showcase rigs (Quantum/Hyper/Pro) so
+  // the Inventory/Home tabs never looked empty in screenshots. For a real
+  // new user this stacked on top of the welcome-grant Starter Rig below,
+  // handing out 4 rigs (~19,600 CORE worth) instead of just the intended
+  // starter kit. Starts empty now — the welcome-grant effect is solely
+  // responsible for a new user's first rig.
+  const [owned, setOwned] = useState(savedGame.owned ?? []);
   const selectedRig = (selectedRigId && owned.find((r) => r.id === selectedRigId)) || null;
   const [componentInventory, setComponentInventory] = useState(savedGame.componentInventory ?? {}); // { [componentKey]: [{id, durability}] }
   const [featuredRigId, setFeaturedRigId] = useState(savedGame.featuredRigId ?? null); // manually pinned rig instance for Home hero
