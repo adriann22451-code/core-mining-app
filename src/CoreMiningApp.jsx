@@ -289,37 +289,47 @@ const ENERGY_PACK_CATALOG = [
 // Kept deliberately tiny — CORE is meant to be scarce and earned mainly
 // through active mining, not free daily taps.
 const DAILY_REWARDS = [
-  { day: 1, amount: 1 },
-  { day: 2, amount: 2 },
-  { day: 3, amount: 3 },
-  { day: 4, amount: 4 },
-  { day: 5, amount: 6 },
-  { day: 6, amount: 8 },
-  { day: 7, amount: 12, bonus: "Quick Charge Pack" },
+  { day: 1, core: 1, energy: 0 },
+  { day: 2, core: 0, energy: 20 },
+  { day: 3, core: 1, energy: 0 },
+  { day: 4, core: 0, energy: 20 },
+  { day: 5, core: 2, energy: 0 },
+  { day: 6, core: 0, energy: 50 },
+  { day: 7, core: 5, energy: 50 },
 ];
+
+// Small helper so the claim toast/button text stays consistent wherever a
+// DAILY_REWARDS entry is rendered as a string (e.g. "+1 CORE", "+20 kWh",
+// or "+5 CORE + 50 kWh" for day 7).
+function formatDailyReward(reward) {
+  const parts = [];
+  if (reward.core > 0) parts.push(`${reward.core} CORE`);
+  if (reward.energy > 0) parts.push(`${reward.energy} kWh`);
+  return parts.join(" + ");
+}
 
 // Permanent milestones. `metric` looks up a live value computed in the app
 // (see `metrics` in the root component); `format` controls how it's shown.
 // Rewards trimmed to the same small scale as daily missions/check-in/
 // referral — permanent one-time bonuses, not a shortcut to easy CORE.
 const ACHIEVEMENTS = [
-  { key: "first_rig", label: "First Rig", desc: "Own at least 1 mining rig.", metric: "rigCount", target: 1, reward: 5, xp: 50, format: "count", unit: "rig" },
-  { key: "component_tech", label: "Component Tech", desc: "Install at least 1 component on a rig.", metric: "installedCount", target: 1, reward: 6, xp: 60, format: "count", unit: "installed" },
-  { key: "field_repair", label: "Field Repair", desc: "Repair a damaged rig at least once.", metric: "repairsCount", target: 1, reward: 5, xp: 40, format: "count", unit: "repair" },
-  { key: "streak_master", label: "Streak Master", desc: "Reach a 7-day daily check-in streak.", metric: "dailyStreak", target: 7, reward: 20, xp: 150, format: "count", unit: "day streak" },
-  { key: "fully_loaded", label: "Fully Loaded", desc: "Fill every component slot on one rig.", metric: "maxFillRatio", target: 1, reward: 30, xp: 200, format: "percent" },
-  { key: "power_overwhelming", label: "Power Overwhelming", desc: "Reach 350 TH/s total mining power.", metric: "miningPower", target: 350, reward: 40, xp: 250, format: "ths" },
-  { key: "rig_collector", label: "Rig Collector", desc: "Own the maximum fleet of 5 rigs.", metric: "rigCount", target: 5, reward: 60, xp: 300, format: "count", unit: "rigs" },
-  { key: "six_figures", label: "Six-Figure Miner", desc: "Earn 100,000 CORE in lifetime income.", metric: "totalEarned", target: 100000, reward: 80, xp: 400, format: "core" },
+  { key: "first_rig", label: "First Rig", desc: "Own at least 1 mining rig.", metric: "rigCount", target: 1, reward: 1, xp: 50, format: "count", unit: "rig" },
+  { key: "component_tech", label: "Component Tech", desc: "Install at least 1 component on a rig.", metric: "installedCount", target: 1, reward: 5, xp: 60, format: "count", unit: "installed" },
+  { key: "field_repair", label: "Field Repair", desc: "Repair a damaged rig at least once.", metric: "repairsCount", target: 1, reward: 1, xp: 40, format: "count", unit: "repair" },
+  { key: "streak_master", label: "Streak Master", desc: "Reach a 7-day daily check-in streak.", metric: "dailyStreak", target: 7, reward: 3, xp: 150, format: "count", unit: "day streak" },
+  { key: "fully_loaded", label: "Fully Loaded", desc: "Fill every component slot on one rig.", metric: "maxFillRatio", target: 1, reward: 5, xp: 200, format: "percent" },
+  { key: "power_overwhelming", label: "Power Overwhelming", desc: "Reach 350 TH/s total mining power.", metric: "miningPower", target: 350, reward: 10, xp: 250, format: "ths" },
+  { key: "rig_collector", label: "Rig Collector", desc: "Own the maximum fleet of 25 rigs.", metric: "rigCount", target: 25, reward: 100, xp: 300, format: "count", unit: "rigs" },
+  { key: "six_figures", label: "Six-Figure Miner", desc: "Earn 100,000 CORE in lifetime income.", metric: "totalEarned", target: 100000, reward: 300, xp: 400, format: "core" },
 ];
 
 // Daily tasks. Progress resets to 0 (and claims unlock again) at midnight.
 // Rewards kept tiny — repeatable daily, so anything bigger would snowball
 // into free CORE fast and undercut scarcity.
 const MISSIONS = [
-  { key: "claim3", label: "Claim Reward 3×", desc: "Claim your mining reward 3 times today.", metric: "claims", target: 3, reward: 3, xp: 30 },
-  { key: "buy1", label: "Make a Purchase", desc: "Buy anything in the Market today.", metric: "purchases", target: 1, reward: 3, xp: 20 },
-  { key: "maintain1", label: "Rig Maintenance", desc: "Upgrade or repair a rig today.", metric: "upgrades", target: 1, reward: 4, xp: 40 },
+  { key: "claim10", label: "Claim Reward 10×", desc: "Claim your mining reward 10 times today.", metric: "claims", target: 10, reward: 1, xp: 30 },
+  { key: "buy1", label: "Make a Purchase", desc: "Buy anything in the Market today.", metric: "purchases", target: 1, reward: 2, xp: 20 },
+  { key: "maintain1", label: "Rig Maintenance", desc: "Upgrade or repair a rig today.", metric: "upgrades", target: 1, reward: 1, xp: 40 },
 ];
 
 // Referral: reward is milestone-only (no instant per-friend payout, no
@@ -332,10 +342,10 @@ const MISSIONS = [
 // new user opens the app via your `startapp=<code>` link, instead of relying
 // on the seeded demo friends.
 const REFERRAL_MILESTONES = [
-  { key: "ref_25", label: "First Squad", desc: "Invite 25 friends to CORE.", target: 25, reward: 15, xp: 20 },
-  { key: "ref_50", label: "Network Builder", desc: "Invite 50 friends to CORE.", target: 50, reward: 35, xp: 40 },
-  { key: "ref_100", label: "Mining Cartel", desc: "Invite 100 friends to CORE.", target: 100, reward: 80, xp: 80 },
-  { key: "ref_200", label: "Syndicate Leader", desc: "Invite 200 friends to CORE.", target: 200, reward: 180, xp: 160 },
+  { key: "ref_25", label: "First Squad", desc: "Invite 25 friends to CORE.", target: 25, reward: 10, xp: 20 },
+  { key: "ref_50", label: "Network Builder", desc: "Invite 50 friends to CORE.", target: 50, reward: 20, xp: 40 },
+  { key: "ref_100", label: "Mining Cartel", desc: "Invite 100 friends to CORE.", target: 100, reward: 50, xp: 80 },
+  { key: "ref_200", label: "Syndicate Leader", desc: "Invite 200 friends to CORE.", target: 200, reward: 100, xp: 160 },
 ];
 
 // Bot username used to build the shareable invite link — replace with your
@@ -1226,7 +1236,7 @@ function Toast({ toast }) {
 // to change). We now persist progress to the browser's localStorage, keyed
 // per device. It does NOT sync across devices — a real multi-device account
 // system would need a backend (e.g. keyed by the Telegram user id).
-const SAVE_KEY = "core_miner_save_v1";
+const SAVE_KEY = "core_miner_save_v2";
 function loadSavedGame() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -2182,15 +2192,11 @@ export default function CoreMiningApp() {
     haptic("medium");
     if (claimedToday) return;
     const reward = DAILY_REWARDS[dailyCurrentDay - 1];
-    setBalance((b) => b + reward.amount);
-    if (reward.bonus) {
-      // "Quick Charge Pack" day-7 bonus — top up energy directly (same
-      // amount as the Quick Charge pack, in kWh now).
-      setEnergy((e) => Math.min(MAX_ENERGY_KWH, e + 100));
-    }
+    if (reward.core > 0) setBalance((b) => b + reward.core);
+    if (reward.energy > 0) setEnergy((e) => Math.min(MAX_ENERGY_KWH, e + reward.energy));
     setDailyStreak(dailyCurrentDay);
     setLastClaimDate(todayStr);
-    notify(`Day ${dailyCurrentDay}: +${reward.amount} CORE${reward.bonus ? ` + ${reward.bonus}` : ""}`);
+    notify(`Day ${dailyCurrentDay}: +${formatDailyReward(reward)}`);
   };
 
   // Native Telegram MainButton is intentionally NOT mirrored here — the
@@ -3642,15 +3648,20 @@ function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onCla
                     <Gift size={13} color={isToday ? C.cyan : "#5B6B82"} />
                   )}
                   <span className="text-[8px] text-slate-500">Day {r.day}</span>
-                  <span
-                    className="text-[10px] font-bold tabular-nums"
-                    style={{ color: isToday ? C.cyan : done ? C.green : "#8FA3B8" }}
-                  >
-                    {r.amount}
-                  </span>
-                  {r.bonus && (
-                    <span className="text-[7px] text-center leading-tight" style={{ color: C.orange }}>
-                      +energy
+                  {r.core > 0 && (
+                    <span
+                      className="text-[10px] font-bold tabular-nums"
+                      style={{ color: isToday ? C.cyan : done ? C.green : "#8FA3B8" }}
+                    >
+                      {r.core} CORE
+                    </span>
+                  )}
+                  {r.energy > 0 && (
+                    <span
+                      className="text-[9px] font-bold tabular-nums text-center leading-tight"
+                      style={{ color: r.core > 0 ? C.orange : (isToday ? C.cyan : done ? C.green : "#8FA3B8") }}
+                    >
+                      {r.energy} kWh
                     </span>
                   )}
                 </div>
@@ -3664,7 +3675,7 @@ function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onCla
             accent={C.cyan}
             accent2={C.purple}
           >
-            {claimedToday ? "Come back tomorrow" : `Claim Day ${currentDay} · +${reward.amount} CORE`}
+            {claimedToday ? "Come back tomorrow" : `Claim Day ${currentDay} · +${formatDailyReward(reward)}`}
           </FuturisticButton>
         </GlowCard>
       </div>
