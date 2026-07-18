@@ -2443,6 +2443,8 @@ export default function CoreMiningApp() {
             schedule={schedule}
             networkHashrateTotal={networkHashrateTotal}
             onOpenNetwork={() => { haptic("light"); setShowNetworkModal(true); }}
+            user={user}
+            onOpenProfile={() => { haptic("light"); setTab("profile"); }}
           />
         )}
         {tab === "pools" && (
@@ -2571,7 +2573,7 @@ export default function CoreMiningApp() {
 // ---------------------------------------------------------------------------
 // HOME
 // ---------------------------------------------------------------------------
-function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, onOpenNetwork }) {
+function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, onOpenNetwork, user, onOpenProfile }) {
   const boosterMinsLeft = activeBooster ? Math.max(0, Math.round((activeBooster.expiresAt - nowTick) / 60000)) : 0;
   const autoTopRig = owned && owned.length
     ? [...owned].sort((a, b) => b.basePower * (1 + (b.level - 1) * 0.18) - a.basePower * (1 + (a.level - 1) * 0.18))[0]
@@ -2594,10 +2596,18 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         </div>
         <div className="flex items-center gap-3 text-slate-400">
           <Bell size={18} />
-          <div
-            className="w-7 h-7 rounded-full border"
-            style={{ borderColor: `${C.cyan}55`, background: "#111a2b" }}
-          />
+          <button onClick={onOpenProfile} aria-label="Open profile">
+            <div
+              className="w-7 h-7 rounded-full border overflow-hidden flex items-center justify-center"
+              style={{ borderColor: `${C.cyan}55`, background: "#111a2b" }}
+            >
+              {user?.photo_url ? (
+                <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <User size={14} color={C.cyan} />
+              )}
+            </div>
+          </button>
         </div>
       </div>
 
