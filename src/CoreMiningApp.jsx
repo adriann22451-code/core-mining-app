@@ -169,10 +169,21 @@ function useTelegram() {
 // lost per hour of active mining — higher-tier rigs run hotter and harder,
 // so they need more frequent repairs.
 const RIG_CATALOG = [
-  { key: "starter", name: "Starter Rig", rarity: "common", basePower: 4.2, baseCost: 320, kwh: 1.1, wearPerHour: 4.5, desc: "Entry-level rig for new miners. Low power draw, easy to maintain." },
-  { key: "pro", name: "Pro Rig", rarity: "rare", basePower: 12.5, baseCost: 880, kwh: 2.4, wearPerHour: 6, desc: "Balanced multi-GPU setup with solid efficiency for steady daily income." },
-  { key: "hyper", name: "Hyper Rig", rarity: "epic", basePower: 34, baseCost: 2240, kwh: 4.2, wearPerHour: 8, desc: "High-density rack with reinforced cooling for sustained heavy loads." },
-  { key: "quantum", name: "Quantum Rig", rarity: "legendary", basePower: 82, baseCost: 4720, kwh: 6.8, wearPerHour: 10, desc: "Flagship immersion-cooled unit — the highest hash power in the fleet." },
+  { key: "starter", name: "Starter Rig", brand: "Generic", rarity: "common", basePower: 4.2, baseCost: 320, kwh: 1.1, wearPerHour: 4.5, desc: "Entry-level rig for new miners. Low power draw, easy to maintain." },
+  { key: "pro", name: "Pro Rig", brand: "Generic", rarity: "rare", basePower: 12.5, baseCost: 880, kwh: 2.4, wearPerHour: 6, desc: "Balanced multi-GPU setup with solid efficiency for steady daily income." },
+  { key: "hyper", name: "Hyper Rig", brand: "Generic", rarity: "epic", basePower: 34, baseCost: 2240, kwh: 4.2, wearPerHour: 8, desc: "High-density rack with reinforced cooling for sustained heavy loads." },
+  { key: "quantum", name: "Quantum Rig", brand: "Generic", rarity: "legendary", basePower: 82, baseCost: 4720, kwh: 6.8, wearPerHour: 10, desc: "Flagship immersion-cooled unit — the highest hash power in the fleet." },
+  // ASIC line — real dedicated hashing hardware instead of a GPU-slot
+  // chassis (Bitmain/MicroBT/Canaan are the three biggest real ASIC
+  // manufacturers). Flavor stat is much lower kwh-per-TH than the Generic
+  // line, mirroring the real efficiency edge purpose-built ASICs have over
+  // general-purpose GPUs — the in-game trade-off is efficiency (ASIC) vs.
+  // flexibility (Generic rigs can still take any GPU component in their
+  // slots; ASIC "slots" represent firmware/cooling mod bays, not GPUs).
+  { key: "avalon_nano", name: "Avalon Nano 3S", brand: "Canaan", rarity: "common", basePower: 4.6, baseCost: 340, kwh: 0.5, wearPerHour: 3, desc: "Compact home ASIC miner. Whisper-quiet, sips power, easy first upgrade from a GPU rig." },
+  { key: "avalon_a15", name: "Avalon A15", brand: "Canaan", rarity: "rare", basePower: 14, baseCost: 950, kwh: 1.5, wearPerHour: 4.5, desc: "Mid-size ASIC miner with a real efficiency edge over general-purpose GPU rigs." },
+  { key: "whatsminer_m60s", name: "Whatsminer M60S", brand: "MicroBT", rarity: "epic", basePower: 37, baseCost: 2350, kwh: 3.2, wearPerHour: 6.5, desc: "Industrial-grade ASIC miner built for 24/7 farm operation." },
+  { key: "antminer_s21", name: "Antminer S21 Hydro", brand: "Bitmain", rarity: "legendary", basePower: 88, baseCost: 4900, kwh: 5.5, wearPerHour: 7.5, desc: "Flagship hydro-cooled ASIC — the most efficient hash power in the fleet." },
 ];
 
 // How many component slots a rig has, by rarity, and the max number of rig
@@ -205,12 +216,78 @@ const MAX_RIGS = 25;
 // flat `power` stat) is factored in, higher tiers clearly pull ahead for
 // players with a bigger fleet — rewarding progression instead of making it
 // pointless.
+//
+// `brand` groups these into 3 real GPU makers for shop filtering/flavor —
+// slots have no brand lock either (same as no rarity lock), so any GPU from
+// any brand fits any rig. AMD priced ~5-10% below the equivalent NVIDIA tier
+// for similar power (real-world price/perf positioning); Intel's Arc line is
+// the budget option and currently only ships up to a mid-range card in real
+// life, so it stops at "rare" instead of getting a legendary tier.
 const COMPONENT_CATALOG = [
-  { key: "rtx5060", name: "RTX 5060", rarity: "common", tflops: 19.2, vram: "8GB GDDR7", msrp: 299, boostPct: 10, power: 8, price: 480, wearPerHour: 3 },
-  { key: "rtx5080", name: "RTX 5080", rarity: "rare", tflops: 56.3, vram: "16GB GDDR7", msrp: 999, boostPct: 28, power: 23, price: 1350, wearPerHour: 4 },
-  { key: "rtx4090", name: "RTX 4090", rarity: "epic", tflops: 82.6, vram: "24GB GDDR6X", msrp: 1599, boostPct: 41, power: 33, price: 1950, wearPerHour: 5 },
-  { key: "rtx5090", name: "RTX 5090", rarity: "legendary", tflops: 104.8, vram: "32GB GDDR7", msrp: 1999, boostPct: 52, power: 42, price: 2350, wearPerHour: 6.5 },
+  { key: "rtx5060", name: "RTX 5060", brand: "NVIDIA", rarity: "common", tflops: 19.2, vram: "8GB GDDR7", msrp: 299, boostPct: 10, power: 8, price: 480, wearPerHour: 3 },
+  { key: "rtx5080", name: "RTX 5080", brand: "NVIDIA", rarity: "rare", tflops: 56.3, vram: "16GB GDDR7", msrp: 999, boostPct: 28, power: 23, price: 1350, wearPerHour: 4 },
+  { key: "rtx4090", name: "RTX 4090", brand: "NVIDIA", rarity: "epic", tflops: 82.6, vram: "24GB GDDR6X", msrp: 1599, boostPct: 41, power: 33, price: 1950, wearPerHour: 5 },
+  { key: "rtx5090", name: "RTX 5090", brand: "NVIDIA", rarity: "legendary", tflops: 104.8, vram: "32GB GDDR7", msrp: 1999, boostPct: 52, power: 42, price: 2350, wearPerHour: 6.5 },
+  { key: "rx7600", name: "Radeon RX 7600", brand: "AMD", rarity: "common", tflops: 21.5, vram: "8GB GDDR6", msrp: 269, boostPct: 9, power: 7, price: 430, wearPerHour: 3 },
+  { key: "rx7800xt", name: "Radeon RX 7800 XT", brand: "AMD", rarity: "rare", tflops: 37.3, vram: "16GB GDDR6", msrp: 499, boostPct: 26, power: 21, price: 1220, wearPerHour: 4 },
+  { key: "rx7900xtx", name: "Radeon RX 7900 XTX", brand: "AMD", rarity: "epic", tflops: 61.4, vram: "24GB GDDR6", msrp: 999, boostPct: 39, power: 31, price: 1780, wearPerHour: 5 },
+  { key: "rx9070xt", name: "Radeon RX 9070 XT", brand: "AMD", rarity: "legendary", tflops: 48.7, vram: "16GB GDDR6", msrp: 599, boostPct: 50, power: 40, price: 2150, wearPerHour: 6.5 },
+  { key: "arc_a380", name: "Arc A380", brand: "Intel", rarity: "common", tflops: 4.1, vram: "6GB GDDR6", msrp: 139, boostPct: 5, power: 4, price: 150, wearPerHour: 2.5 },
+  { key: "arc_b580", name: "Arc B580", brand: "Intel", rarity: "rare", tflops: 13.7, vram: "12GB GDDR6", msrp: 249, boostPct: 16, power: 13, price: 620, wearPerHour: 3.5 },
 ];
+
+// ---------------------------------------------------------------------------
+// CRAFTING — materials, quests, and recipes
+// ---------------------------------------------------------------------------
+// Raw parts a GPU/rig is assembled from in real life. These have no direct
+// stat effect on their own — they're only ever consumed by RECIPES (below)
+// to craft a real COMPONENT_CATALOG entry, or produced by dismantling one
+// (see recycleComponent) or by completing a QUEST.
+const MATERIAL_CATALOG = [
+  { key: "silicon_die", name: "Silicon Die", rarity: "common", desc: "Raw unpackaged chip die — the compute core before it's mounted." },
+  { key: "vram_chip", name: "GDDR Memory Chip", rarity: "common", desc: "High-speed memory chip used on graphics cards and hash boards." },
+  { key: "pcb_board", name: "PCB Board", rarity: "common", desc: "Multi-layer circuit board everything else solders onto." },
+  { key: "power_connector", name: "Power Connector", rarity: "common", desc: "High-current connector rated for sustained draw." },
+  { key: "cooling_fan", name: "Cooling Fan", rarity: "common", desc: "High-static-pressure fan for forced-air cooling." },
+  { key: "thermal_paste", name: "Thermal Compound", rarity: "common", desc: "Conductive paste that fills microscopic gaps between die and heatsink." },
+  { key: "copper_heatsink", name: "Copper Heatsink", rarity: "rare", desc: "High-conductivity cooling block for heavy thermal loads." },
+  { key: "asic_chip", name: "ASIC Hash Chip", rarity: "rare", desc: "Chip hard-wired for one hashing algorithm — faster and more efficient than a general-purpose GPU at it." },
+];
+
+// One-time tasks that reward crafting MATERIALS instead of CORE (see MISSIONS
+// for the repeatable-daily CORE equivalent, and ACHIEVEMENTS for the
+// one-time CORE equivalent). `metric` is looked up on the same live
+// `metrics` object ACHIEVEMENTS reads from — see metrics below for the 3
+// extra fields (level, invitedCount, poolJoined) added just for these.
+const QUESTS = [
+  { key: "q_rig_rookie", label: "Rig Rookie", desc: "Own at least 2 rigs.", metric: "rigCount", target: 2, materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }], xp: 40 },
+  { key: "q_wrench_time", label: "Wrench Time", desc: "Repair a rig 5 times.", metric: "repairsCount", target: 5, materials: [{ key: "copper_heatsink", qty: 2 }, { key: "thermal_paste", qty: 3 }], xp: 80 },
+  { key: "q_power_climber", label: "Power Climber", desc: "Reach 100 TH/s total mining power.", metric: "miningPower", target: 100, materials: [{ key: "vram_chip", qty: 3 }, { key: "cooling_fan", qty: 2 }], xp: 120 },
+  { key: "q_network_node", label: "Network Node", desc: "Join a mining pool.", metric: "poolJoined", target: 1, materials: [{ key: "asic_chip", qty: 1 }, { key: "power_connector", qty: 2 }], xp: 100 },
+  { key: "q_squad_up", label: "Squad Up", desc: "Invite 5 friends to CORE.", metric: "invitedCount", target: 5, materials: [{ key: "pcb_board", qty: 3 }, { key: "silicon_die", qty: 3 }], xp: 100 },
+  { key: "q_level_grinder", label: "Level Grinder", desc: "Reach account level 10.", metric: "level", target: 10, materials: [{ key: "vram_chip", qty: 2 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }], xp: 200 },
+];
+
+// Craft a real COMPONENT_CATALOG entry from materials + a CORE fee. Priced
+// at roughly half the shop `price` for the same GPU — crafting is meant to
+// be the cheaper path, paid for in quest-earned materials instead of CORE.
+const RECIPES = [
+  { key: "craft_rtx5060", outputKey: "rtx5060", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "cooling_fan", qty: 1 }], core: 240 },
+  { key: "craft_rtx5080", outputKey: "rtx5080", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }], core: 675 },
+  { key: "craft_rtx4090", outputKey: "rtx4090", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }], core: 975 },
+  { key: "craft_rtx5090", outputKey: "rtx5090", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }], core: 1175 },
+  { key: "craft_rx7600", outputKey: "rx7600", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], core: 215 },
+  { key: "craft_rx7800xt", outputKey: "rx7800xt", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }], core: 610 },
+  { key: "craft_rx7900xtx", outputKey: "rx7900xtx", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }], core: 890 },
+  { key: "craft_rx9070xt", outputKey: "rx9070xt", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }], core: 1075 },
+  { key: "craft_arc_a380", outputKey: "arc_a380", materials: [{ key: "silicon_die", qty: 1 }, { key: "pcb_board", qty: 1 }, { key: "cooling_fan", qty: 1 }], core: 75 },
+  { key: "craft_arc_b580", outputKey: "arc_b580", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], core: 310 },
+];
+// Dismantling an owned (uninstalled) component pays back this fraction of
+// its recipe's materials, rounded up (min 1 each) — lets a player recover
+// materials from a duplicate/unwanted craft instead of it being dead weight.
+const RECYCLE_REFUND_RATE = 0.5;
+
 
 // Temporary income buffs modeled on real ASIC/mining-farm optimisation
 // techniques. boostPct = % extra CORE/hour while active, durationHours =
@@ -1583,6 +1660,11 @@ export default function CoreMiningApp() {
   const [owned, setOwned] = useState(savedGame.owned ?? []);
   const selectedRig = (selectedRigId && owned.find((r) => r.id === selectedRigId)) || null;
   const [componentInventory, setComponentInventory] = useState(savedGame.componentInventory ?? {}); // { [componentKey]: [{id, durability}] }
+  // Crafting materials — simple counts, unlike componentInventory (no
+  // per-unit durability to track since a material is just a stack of parts).
+  const [materialInventory, setMaterialInventory] = useState(savedGame.materialInventory ?? {}); // { [materialKey]: count }
+  const [questClaimed, setQuestClaimed] = useState(savedGame.questClaimed ?? []);
+  const [showQuestsModal, setShowQuestsModal] = useState(false);
   const [featuredRigId, setFeaturedRigId] = useState(savedGame.featuredRigId ?? null); // manually pinned rig instance for Home hero
   const [activeBooster, setActiveBooster] = useState(savedGame.activeBooster ?? null); // { key, name, boostPct, expiresAt }
   const [nowTick, setNowTick] = useState(Date.now());
@@ -1660,6 +1742,7 @@ export default function CoreMiningApp() {
   const persistRef = useRef({});
   persistRef.current = {
     balance, pending, energy, level, xp, totalEarned, owned, componentInventory,
+    materialInventory, questClaimed,
     featuredRigId, activeBooster, dailyStreak, lastClaimDate, repairsCount,
     achievementsClaimed, missionProgress, missionClaimed, invitedFriends,
     referralMilestonesClaimed, pools, joinedPoolId, listings,
@@ -1712,6 +1795,8 @@ export default function CoreMiningApp() {
     }
     if (Array.isArray(p.owned)) setOwned(p.owned);
     if (p.componentInventory && typeof p.componentInventory === "object") setComponentInventory(p.componentInventory);
+    if (p.materialInventory && typeof p.materialInventory === "object") setMaterialInventory(p.materialInventory);
+    if (Array.isArray(p.questClaimed)) setQuestClaimed(p.questClaimed);
     if ("featuredRigId" in p) setFeaturedRigId(p.featuredRigId);
     if ("activeBooster" in p) setActiveBooster(p.activeBooster);
     if (typeof p.dailyStreak === "number") setDailyStreak(p.dailyStreak);
@@ -1939,6 +2024,12 @@ export default function CoreMiningApp() {
       : 0,
     miningPower,
     totalEarned,
+    // Extra fields used only by QUESTS (see catalog above) — kept separate
+    // from the ACHIEVEMENTS-era fields above for clarity, same object so
+    // both features can share the identical claim/progress-bar pattern.
+    level,
+    invitedCount: invitedFriends.length,
+    poolJoined: joinedPoolId ? 1 : 0,
   };
 
   // ---- Network / tokenomics ---------------------------------------------
@@ -2175,6 +2266,35 @@ export default function CoreMiningApp() {
 
   const closeAchievementsModal = useCallback(() => setShowAchievementsModal(false), []);
 
+  // Same pattern as claimAchievement, but the reward is a bundle of crafting
+  // materials (see QUESTS catalog) instead of a flat CORE amount.
+  const questClaimedRef = useRef(questClaimed);
+  questClaimedRef.current = questClaimed;
+
+  const claimQuest = useCallback((quest) => {
+    haptic("medium");
+    const progress = metricsRef.current[quest.metric] || 0;
+    if (progress < quest.target) {
+      notify("Not reached yet", "error");
+      return;
+    }
+    if (questClaimedRef.current.includes(quest.key)) {
+      notify("Already claimed", "error");
+      return;
+    }
+    setMaterialInventory((inv) => {
+      const next = { ...inv };
+      for (const m of quest.materials) next[m.key] = (next[m.key] || 0) + m.qty;
+      return next;
+    });
+    addXp(quest.xp);
+    setQuestClaimed((c) => [...c, quest.key]);
+    const summary = quest.materials.map((m) => `${m.qty}× ${MATERIAL_CATALOG.find((x) => x.key === m.key)?.name ?? m.key}`).join(", ");
+    notify(`${quest.label} complete — got ${summary}`);
+  }, [haptic, notify, addXp]);
+
+  const closeQuestsModal = useCallback(() => setShowQuestsModal(false), []);
+
   const referralLink = `https://t.me/${BOT_USERNAME}/${MINI_APP_SHORT_NAME}?startapp=${referralCode}`;
 
   // Same stable-ref pattern as claimAchievement/closeAchievementsModal above —
@@ -2270,6 +2390,71 @@ export default function CoreMiningApp() {
     }));
     setMissionProgress((mp) => ({ ...mp, purchases: mp.purchases + 1 }));
     notify(`${comp.name} added to inventory`);
+  };
+
+  // Craft a component from a recipe: consumes the recipe's materials + a
+  // CORE fee, produces one fresh (100% durability) unit of the output
+  // component — same shape as buying it in the Market, just a cheaper
+  // materials-gated path instead of a pure-CORE one.
+  const craftComponent = (recipe) => {
+    haptic("light");
+    const missing = recipe.materials.find((m) => (materialInventory[m.key] || 0) < m.qty);
+    if (missing) {
+      notify("Missing materials", "error");
+      return;
+    }
+    if (balance < recipe.core) {
+      notify("Not enough CORE", "error");
+      return;
+    }
+    const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
+    if (!comp) return;
+    setBalance((b) => b - recipe.core);
+    setMaterialInventory((inv) => {
+      const next = { ...inv };
+      for (const m of recipe.materials) next[m.key] = (next[m.key] || 0) - m.qty;
+      return next;
+    });
+    setComponentInventory((inv) => ({
+      ...inv,
+      [comp.key]: [...(inv[comp.key] || []), makeComponentInstance(comp.key, 100)],
+    }));
+    setMissionProgress((mp) => ({ ...mp, purchases: mp.purchases + 1 }));
+    notify(`${comp.name} crafted`);
+  };
+
+  // Dismantle one owned, uninstalled unit of a component back into a
+  // fraction of its recipe's materials (RECYCLE_REFUND_RATE) — recovers
+  // value from a duplicate/unwanted craft or Market buy instead of it just
+  // sitting in inventory forever.
+  const recycleComponent = (compKey) => {
+    haptic("light");
+    const stock = componentInventory[compKey] || [];
+    if (stock.length === 0) {
+      notify("None in inventory", "error");
+      return;
+    }
+    const recipe = RECIPES.find((r) => r.outputKey === compKey);
+    if (!recipe) {
+      notify("Can't recycle this item", "error");
+      return;
+    }
+    // Recycle the lowest-durability unit first — keeps the best-condition
+    // copies available for installing.
+    const target = stock.slice().sort((a, b) => (a.durability ?? 100) - (b.durability ?? 100))[0];
+    setComponentInventory((inv) => ({
+      ...inv,
+      [compKey]: (inv[compKey] || []).filter((u) => u.id !== target.id),
+    }));
+    setMaterialInventory((inv) => {
+      const next = { ...inv };
+      for (const m of recipe.materials) {
+        next[m.key] = (next[m.key] || 0) + Math.max(1, Math.ceil(m.qty * RECYCLE_REFUND_RATE));
+      }
+      return next;
+    });
+    const comp = COMPONENT_CATALOG.find((c) => c.key === compKey);
+    notify(`${comp?.name ?? "Component"} recycled for parts`);
   };
 
   const installComponent = (rigId, slotIndex, key, instanceId) => {
@@ -2783,6 +2968,15 @@ export default function CoreMiningApp() {
         />
       )}
 
+      {showQuestsModal && (
+        <QuestsModal
+          onClose={closeQuestsModal}
+          metrics={metrics}
+          claimed={questClaimed}
+          onClaim={claimQuest}
+        />
+      )}
+
       {showReferralModal && (
         <ReferralModal
           onClose={closeReferralModal}
@@ -2924,6 +3118,9 @@ export default function CoreMiningApp() {
             onBuyBooster={buyBooster}
             energy={energy}
             onBuyEnergyPack={buyEnergyPack}
+            materialInventory={materialInventory}
+            onCraft={craftComponent}
+            onRecycle={recycleComponent}
           />
         )}
         {tab === "marketplace" && (
@@ -2969,6 +3166,10 @@ export default function CoreMiningApp() {
             onOpenReferral={() => { haptic("light"); setShowReferralModal(true); }}
             referralClaimReady={REFERRAL_MILESTONES.some(
               (m) => invitedFriends.length >= m.target && !referralMilestonesClaimed.includes(m.key)
+            )}
+            onOpenQuests={() => { haptic("light"); setShowQuestsModal(true); }}
+            questsClaimReady={QUESTS.some(
+              (q) => (metrics[q.metric] || 0) >= q.target && !questClaimed.includes(q.key)
             )}
             onOpenSettings={() => { haptic("light"); setShowSettingsModal(true); }}
           />
@@ -3387,8 +3588,8 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
 // ---------------------------------------------------------------------------
 // MARKET
 // ---------------------------------------------------------------------------
-function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, componentInventory, onBuyComponent, activeBooster, onBuyBooster, energy, onBuyEnergyPack }) {
-  const tabs = ["Rigs", "Components", "Boosters", "Packs"];
+function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, componentInventory, onBuyComponent, activeBooster, onBuyBooster, energy, onBuyEnergyPack, materialInventory = {}, onCraft, onRecycle }) {
+  const tabs = ["Rigs", "Components", "Craft", "Boosters", "Packs"];
   return (
     <div>
       <TopBar title="Shop" right={<Search size={17} />} />
@@ -3423,6 +3624,11 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                     <div className="flex items-center gap-2">
                       <p className="text-white text-sm font-bold">{rig.name}</p>
                       <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
+                      {rig.brand && (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#8FA3B8" }}>
+                          {rig.brand}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[10px] text-slate-500 leading-snug">{rig.desc}</p>
                     <p className="text-[11px]" style={{ color: C.cyan }}>
@@ -3462,6 +3668,11 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                     <div className="flex items-center gap-2">
                       <p className="text-white text-sm font-bold">{comp.name}</p>
                       <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
+                      {comp.brand && (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#8FA3B8" }}>
+                          {comp.brand}
+                        </span>
+                      )}
                       {owned > 0 && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${rar.color}22`, color: rar.color }}>
                           owned x{owned}
@@ -3491,6 +3702,93 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 </GlowCard>
               );
             })
+        ) : filter === "Craft" ? (
+          <>
+            <GlowCard accent={C.purple} className="p-3">
+              <p className="text-[11px] font-bold text-white mb-2">Your materials</p>
+              {MATERIAL_CATALOG.every((m) => !(materialInventory[m.key] > 0)) ? (
+                <p className="text-[10px] text-slate-500">None yet — earn materials from Quests (Profile tab).</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => (
+                    <span
+                      key={m.key}
+                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: `${C.purple}18`, color: C.purple }}
+                    >
+                      {m.name} ×{materialInventory[m.key]}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </GlowCard>
+
+            {RECIPES.map((recipe) => {
+              const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
+              if (!comp) return null;
+              const rar = RARITY_STYLE[comp.rarity];
+              const owned = (componentInventory[comp.key] || []).length;
+              const hasMaterials = recipe.materials.every((m) => (materialInventory[m.key] || 0) >= m.qty);
+              const canAfford = balance >= recipe.core && hasMaterials;
+              return (
+                <GlowCard key={recipe.key} accent={rar.color} className="p-3 flex items-center gap-3">
+                  <ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-sm font-bold">{comp.name}</p>
+                      <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
+                      {owned > 0 && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${rar.color}22`, color: rar.color }}>
+                          owned x{owned}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1 mb-1">
+                      {recipe.materials.map((m) => {
+                        const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+                        const have = materialInventory[m.key] || 0;
+                        const enough = have >= m.qty;
+                        return (
+                          <span
+                            key={m.key}
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                            style={{ background: enough ? `${C.green}18` : `${C.orange}18`, color: enough ? C.green : C.orange }}
+                          >
+                            {m.qty}× {mat?.name ?? m.key} ({have})
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <p className="text-white text-xs font-bold tabular-nums">
+                      {fmt(recipe.core, 0)} <span style={{ color: C.cyan }}>CORE</span>
+                      <span className="text-[10px] text-slate-500 font-normal"> · shop price {fmt(comp.price, 0)}</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1.5 items-end">
+                    <FuturisticButton
+                      onClick={() => onCraft(recipe)}
+                      disabled={!canAfford}
+                      accent={rar.color}
+                      accent2={C.blue}
+                      full={false}
+                      size="sm"
+                    >
+                      Craft
+                    </FuturisticButton>
+                    {owned > 0 && (
+                      <button
+                        onClick={() => onRecycle(comp.key)}
+                        className="text-[9px] font-semibold px-2 py-1 rounded-lg"
+                        style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
+                      >
+                        Recycle owned
+                      </button>
+                    )}
+                  </div>
+                </GlowCard>
+              );
+            })}
+          </>
         ) : filter === "Boosters" ? (
           BOOSTER_CATALOG.slice()
             .reverse()
@@ -4308,6 +4606,101 @@ function MissionsModal({ onClose, missionProgress, missionClaimed, onClaim }) {
 }
 
 // ---------------------------------------------------------------------------
+// QUESTS (crafting materials)
+// ---------------------------------------------------------------------------
+function QuestsModal({ onClose, metrics, claimed, onClaim }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(3,5,10,0.72)" }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+        <GlowCard accent={C.purple} brackets className="p-5">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Boxes size={16} color={C.purple} />
+              <h2 className="text-white font-extrabold text-sm tracking-wide">QUESTS</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-400 mb-4">Complete a quest once to earn crafting materials — spend them in Market → Craft.</p>
+
+          <div className="flex flex-col gap-2.5">
+            {QUESTS.map((q) => {
+              const progress = Math.min(q.target, metrics[q.metric] || 0);
+              const pct = Math.min(100, (progress / q.target) * 100);
+              const complete = progress >= q.target;
+              const isClaimed = claimed.includes(q.key);
+              return (
+                <div
+                  key={q.key}
+                  className="rounded-xl p-3"
+                  style={{
+                    background: isClaimed ? `${C.green}0C` : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${isClaimed ? C.green + "44" : "#1c2536"}`,
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-white text-xs font-bold">{q.label}</p>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mb-2">{q.desc}</p>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {q.materials.map((m) => {
+                      const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+                      return (
+                        <span
+                          key={m.key}
+                          className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                          style={{ background: `${C.purple}18`, color: C.purple }}
+                        >
+                          {m.qty}× {mat?.name ?? m.key}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden mb-2">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct}%`, background: isClaimed ? C.green : `linear-gradient(90deg, ${C.purple}, ${C.blue})` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 tabular-nums">
+                      {progress}/{q.target}
+                    </span>
+                    {isClaimed ? (
+                      <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: C.green }}>
+                        <Check size={11} /> Claimed
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onClaim(q)}
+                        disabled={!complete}
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
+                        style={{
+                          background: complete ? `${C.purple}1F` : "transparent",
+                          border: `1px solid ${complete ? C.purple : "#2a3346"}`,
+                          color: complete ? C.purple : "#5B6B82",
+                        }}
+                      >
+                        Claim
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </GlowCard>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // ACHIEVEMENTS
 // ---------------------------------------------------------------------------
 const ACHIEVEMENTS_PER_PAGE = 4;
@@ -4585,7 +4978,7 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
 // ---------------------------------------------------------------------------
 // PROFILE
 // ---------------------------------------------------------------------------
-function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenSettings }) {
+function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenSettings }) {
   const pct = (xp / xpToNext) * 100;
   const tiles = [
     { icon: Trophy, label: "Achievements", color: C.orange },
@@ -4593,6 +4986,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
     { icon: Database, label: "Network", color: C.cyan },
     { icon: Users, label: "Referral", color: C.green },
     { icon: Target, label: "Missions", color: C.blue },
+    { icon: Boxes, label: "Quests", color: C.purple },
   ];
 
   const displayName = user
@@ -4690,6 +5084,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
           const isMissions = t.label === "Missions";
           const isAchievements = t.label === "Achievements";
           const isReferral = t.label === "Referral";
+          const isQuests = t.label === "Quests";
           return (
             <button
               key={t.label}
@@ -4704,6 +5099,8 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
                   ? onOpenAchievements()
                   : isReferral
                   ? onOpenReferral()
+                  : isQuests
+                  ? onOpenQuests()
                   : notify(`${t.label} opened`)
               }
             >
@@ -4711,7 +5108,8 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
                 {((isDaily && dailyClaimAvailable) ||
                   (isMissions && missionsClaimReady) ||
                   (isAchievements && achievementsClaimReady) ||
-                  (isReferral && referralClaimReady)) && (
+                  (isReferral && referralClaimReady) ||
+                  (isQuests && questsClaimReady)) && (
                   <span
                     className="absolute top-2 right-2 w-2 h-2 rounded-full"
                     style={{ background: C.green, boxShadow: `0 0 6px 1px ${C.green}` }}
