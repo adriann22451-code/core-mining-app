@@ -8,8 +8,10 @@
 
 import { getRedis } from "./_redis.js";
 import { verifyTelegramInitData } from "./_telegram-auth.js";
+import { getClientIp } from "./_ip.js";
 
 const PLAYER_KEY = (id) => `player:${id}`;
+const PLAYER_IP_KEY = (id) => `player_ip:${id}`;
 const ACTIVE_MINERS_KEY = "active_miners";
 const TOTAL_MINED_KEY = "stats:totalMined";
 
@@ -56,6 +58,9 @@ export default async function handler(req, res) {
       // Heartbeat: mark this player as active right now (stats.js counts
       // anyone seen within the last 24h as an "active miner").
       pipeline.zadd(ACTIVE_MINERS_KEY, now, String(user.id));
+
+      const ip = getClientIp(req);
+      if (ip) pipeline.set(PLAYER_IP_KEY(user.id), ip);
 
       const delta = Number(claimedDelta);
       if (Number.isFinite(delta) && delta > 0) {
