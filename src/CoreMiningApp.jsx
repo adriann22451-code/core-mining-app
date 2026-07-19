@@ -701,9 +701,9 @@ function GlowCard({ children, className = "", accent = C.cyan, style = {}, brack
     <div
       className={`relative rounded-2xl border ${className}`}
       style={{
-        background: "linear-gradient(180deg, rgba(16,22,38,0.9), rgba(8,12,22,0.9))",
-        borderColor: `${accent}33`,
-        boxShadow: `0 0 0 1px rgba(255,255,255,0.02) inset, 0 8px 24px -12px ${accent}55`,
+        background: `linear-gradient(165deg, ${accent}3D 0%, ${accent}14 32%, rgba(10,14,24,0.95) 62%, rgba(7,10,19,0.97) 100%)`,
+        borderColor: `${accent}4D`,
+        boxShadow: `0 0 0 1px rgba(255,255,255,0.02) inset, 0 8px 24px -12px ${accent}66`,
         ...style,
       }}
     >
@@ -733,7 +733,11 @@ function Chip({ children, color = "#8FA3B8", bg }) {
 // section stacking its own ad-hoc pile of text lines.
 function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, priceNote, action }) {
   return (
-    <GlowCard accent={accent} className="p-3">
+    <GlowCard accent={accent} brackets className="p-3">
+      <div
+        className="absolute inset-x-3 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
+      />
       <div className="flex items-start gap-2.5">
         {icon}
         <div className="flex-1 min-w-0">
@@ -774,6 +778,45 @@ function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, price
 // per screen with no scrolling) — same accent/glow/bracket language as
 // ShopRow, just reflowed top-to-bottom instead of left-to-right so each
 // item takes far less vertical room.
+// Compact grid tile used on the Profile screen's menu (Achievements, Daily
+// Bonus, Network, Referral, Missions, Quests, Codex). Deliberately mirrors
+// ShopCard's language (glow icon box, top gradient hairline, corner
+// brackets) so Profile and Shop read as the same visual system instead of
+// two different UIs bolted together.
+function ProfileMenuTile({ icon: Icon, label, accent, showDot, onClick, className = "" }) {
+  return (
+    <button onClick={onClick} className={`w-full text-left ${className}`}>
+      <GlowCard
+        accent={accent}
+        brackets
+        className="p-3 flex flex-col items-center justify-center gap-1.5 text-center transition-transform duration-150 active:scale-[0.95]"
+      >
+        <div
+          className="absolute inset-x-3 top-0 h-px"
+          style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
+        />
+        {showDot && (
+          <span
+            className="absolute top-2 right-2 w-2 h-2 rounded-full"
+            style={{ background: C.green, boxShadow: `0 0 6px 1px ${C.green}` }}
+          />
+        )}
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{
+            background: `radial-gradient(circle, ${accent}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
+            boxShadow: `inset 0 0 0 1px ${accent}66`,
+            filter: `drop-shadow(0 0 8px ${accent}cc) drop-shadow(0 0 16px ${accent}55)`,
+          }}
+        >
+          <Icon size={18} color={accent} />
+        </div>
+        <span className="text-white text-[11px] font-semibold leading-tight">{label}</span>
+      </GlowCard>
+    </button>
+  );
+}
+
 function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
   return (
     <GlowCard
@@ -788,8 +831,9 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
       <div
         className="w-11 h-11 rounded-xl flex items-center justify-center mb-1.5"
         style={{
-          background: `radial-gradient(circle, ${accent}22, transparent 70%)`,
-          filter: `drop-shadow(0 0 6px ${accent}55)`,
+          background: `radial-gradient(circle, ${accent}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
+          boxShadow: `inset 0 0 0 1px ${accent}66`,
+          filter: `drop-shadow(0 0 8px ${accent}cc) drop-shadow(0 0 16px ${accent}55)`,
         }}
       >
         {icon}
@@ -5667,6 +5711,23 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
   const { t } = useLanguage();
   const tonAddress = useTonAddress();
 
+  const tileHandlers = {
+    Achievements: onOpenAchievements,
+    "Daily Bonus": onOpenDaily,
+    Network: onOpenNetwork,
+    Referral: onOpenReferral,
+    Missions: onOpenMissions,
+    Quests: onOpenQuests,
+    Codex: onOpenCodex,
+  };
+  const tileDots = {
+    Achievements: achievementsClaimReady,
+    "Daily Bonus": dailyClaimAvailable,
+    Referral: referralClaimReady,
+    Missions: missionsClaimReady,
+    Quests: questsClaimReady,
+  };
+
   return (
     <div>
       <TopBar
@@ -5677,18 +5738,18 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
           </button>
         }
       />
-      <div className="px-4 flex flex-col items-center mt-2">
+      <div className="px-4 flex flex-col items-center mt-1.5">
         <div
-          className="w-20 h-20 rounded-full border-2 flex items-center justify-center overflow-hidden"
+          className="w-16 h-16 rounded-full border-2 flex items-center justify-center overflow-hidden"
           style={{ borderColor: C.cyan, background: "#0c1322" }}
         >
           {user?.photo_url ? (
             <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
           ) : (
-            <User size={34} color={C.cyan} />
+            <User size={28} color={C.cyan} />
           )}
         </div>
-        <p className="text-white font-bold mt-2 text-sm">{displayName}</p>
+        <p className="text-white font-bold mt-1.5 text-sm">{displayName}</p>
         <p className="text-slate-500 text-[11px]">
           {displayId}
           {user?.username ? ` · @${user.username}` : ""}
@@ -5699,7 +5760,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
           </p>
         )}
 
-        <div className="w-full mt-4">
+        <div className="w-full mt-2.5">
           <div className="flex justify-between text-[11px] text-slate-400 mb-1">
             <span>Level {level}</span>
             <span className="tabular-nums">{fmt(xp, 0)} / {fmt(xpToNext, 0)} XP</span>
@@ -5713,8 +5774,8 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
         </div>
       </div>
 
-      <div className="px-4 mt-4">
-        <GlowCard accent={C.green} className="p-4 flex items-center justify-between">
+      <div className="px-4 mt-2.5">
+        <GlowCard accent={C.green} className="p-3 flex items-center justify-between">
           <div>
             <p className="text-slate-400 text-[11px]">Total Earned</p>
             <p className="text-white font-extrabold tabular-nums">
@@ -5728,12 +5789,12 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
         </GlowCard>
       </div>
 
-      <div className="px-4 mt-3">
-        <GlowCard accent={C.blue} className="p-4">
+      <div className="px-4 mt-2.5">
+        <GlowCard accent={C.blue} className="p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-white font-bold text-xs flex items-center gap-1.5">
-                <Database size={14} color={C.blue} /> {t("wallet_title")}
+                <Wallet size={14} color={C.blue} /> {t("wallet_title")}
               </p>
               <p className="text-slate-500 text-[10px] mt-1 truncate">
                 {tonAddress
@@ -5746,7 +5807,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-2 mt-2.5">
             <button
               onClick={onOpenDeposit}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg"
@@ -5767,54 +5828,18 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
         </GlowCard>
       </div>
 
-      <div className="px-4 grid grid-cols-2 gap-3 mt-3">
-        {tiles.map((t) => {
-          const isDaily = t.label === "Daily Bonus";
-          const isNetwork = t.label === "Network";
-          const isMissions = t.label === "Missions";
-          const isAchievements = t.label === "Achievements";
-          const isReferral = t.label === "Referral";
-          const isQuests = t.label === "Quests";
-          const isCodex = t.label === "Codex";
-          return (
-            <button
-              key={t.label}
-              onClick={() =>
-                isDaily
-                  ? onOpenDaily()
-                  : isNetwork
-                  ? onOpenNetwork()
-                  : isMissions
-                  ? onOpenMissions()
-                  : isAchievements
-                  ? onOpenAchievements()
-                  : isReferral
-                  ? onOpenReferral()
-                  : isQuests
-                  ? onOpenQuests()
-                  : isCodex
-                  ? onOpenCodex()
-                  : notify(`${t.label} opened`)
-              }
-              className={isCodex ? "col-span-2" : ""}
-            >
-              <GlowCard accent={t.color} className="p-4 flex flex-col items-center gap-2 relative">
-                {((isDaily && dailyClaimAvailable) ||
-                  (isMissions && missionsClaimReady) ||
-                  (isAchievements && achievementsClaimReady) ||
-                  (isReferral && referralClaimReady) ||
-                  (isQuests && questsClaimReady)) && (
-                  <span
-                    className="absolute top-2 right-2 w-2 h-2 rounded-full"
-                    style={{ background: C.green, boxShadow: `0 0 6px 1px ${C.green}` }}
-                  />
-                )}
-                <t.icon size={20} color={t.color} />
-                <span className="text-white text-xs font-semibold">{t.label}</span>
-              </GlowCard>
-            </button>
-          );
-        })}
+      <div className="px-4 grid grid-cols-4 gap-2 mt-2.5 pb-2">
+        {tiles.map((t) => (
+          <ProfileMenuTile
+            key={t.label}
+            icon={t.icon}
+            label={t.label}
+            accent={t.color}
+            showDot={!!tileDots[t.label]}
+            onClick={() => (tileHandlers[t.label] ? tileHandlers[t.label]() : notify(`${t.label} opened`))}
+            className={t.label === "Codex" ? "col-span-4" : "col-span-2"}
+          />
+        ))}
       </div>
     </div>
   );
@@ -6096,6 +6121,10 @@ function PoolsTab({ pools, joinedPoolId, miningPower, poolIncomePerHour, onOpenC
           <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide">YOUR POOL</p>
           <button className="w-full text-left" onClick={() => onOpenDetail(joinedPool.id)}>
             <GlowCard accent={C.cyan} brackets className="p-4">
+              <div
+                className="absolute inset-x-3 top-0 h-px"
+                style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}77, transparent)` }}
+              />
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white font-bold text-sm">{joinedPool.name}</p>
@@ -6161,7 +6190,11 @@ function PoolsTab({ pools, joinedPoolId, miningPower, poolIncomePerHour, onOpenC
             const full = stats.count >= POOL_MAX_MEMBERS;
             return (
               <button key={pool.id} className="w-full text-left" onClick={() => onOpenDetail(pool.id)}>
-                <GlowCard accent={C.blue} className="p-3">
+                <GlowCard accent={C.blue} brackets className="p-3">
+                  <div
+                    className="absolute inset-x-3 top-0 h-px"
+                    style={{ background: `linear-gradient(90deg, transparent, ${C.blue}77, transparent)` }}
+                  />
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-white font-semibold text-xs">{pool.name}</p>
