@@ -1590,7 +1590,17 @@ export default function CoreMiningApp() {
   // timestamp delta (instead of assuming exactly 1s passed) keeps energy
   // drain/durability wear correct even if the browser throttles the timer
   // (e.g. a backgrounded tab), instead of silently falling behind.
-  const lastTickRef = useRef(Date.now());
+  //
+  // BUGFIX: this used to always start at `Date.now()` on every mount, which
+  // meant closing the app and reopening it later reset the clock to "now" —
+  // so the very first tick's deltaHours was ~0 and none of the offline time
+  // was ever counted, even though the server is a real-time simulation.
+  // Seeding it from the persisted `lastActiveAt` (falling back to "now" only
+  // for a genuinely fresh install) makes the first tick after reopening
+  // compute the real elapsed offline duration, so pending CORE/energy drain/
+  // durability wear all catch up exactly like they would have if the app
+  // had stayed open.
+  const lastTickRef = useRef(savedGame.lastActiveAt ?? Date.now());
   // Was: dailyStreak defaulted to 3 with lastClaimDate defaulted to
   // "yesterday", so dailyCurrentDay = (3 % 7) + 1 = 4 for every new user —
   // the daily bonus opened straight to Day 4 instead of Day 1. Defaulting
@@ -1659,7 +1669,10 @@ export default function CoreMiningApp() {
   useEffect(() => {
     const save = () => {
       try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(persistRef.current));
+        localStorage.setItem(
+          SAVE_KEY,
+          JSON.stringify({ ...persistRef.current, lastActiveAt: Date.now() })
+        );
       } catch {
         // localStorage can throw (private mode, quota, etc.) — safe to ignore,
         // just means this particular save attempt is skipped.
@@ -2042,15 +2055,38 @@ export default function CoreMiningApp() {
   totalEnergyPerHourRef.current = totalEnergyPerHourActive;
   const energyRef = useRef(energy);
   energyRef.current = energy;
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
 
   // passive tick — created once (empty dep array) instead of every second.
   useEffect(() => {
+    // Sanity cap on a single catch-up jump (e.g. a corrupted/very old
+    // timestamp) — 30 days is far more than enough since pending is already
+    // capped by storageCap and energy floors at 0 either way.
+    const MAX_CATCHUP_HOURS = 24 * 30;
+    let firstTick = true;
     const id = setInterval(() => {
       const now = Date.now();
-      const deltaHours = Math.max(0, (now - lastTickRef.current) / 3600000);
+      const rawDeltaHours = Math.max(0, (now - lastTickRef.current) / 3600000);
+      const deltaHours = Math.min(rawDeltaHours, MAX_CATCHUP_HOURS);
       lastTickRef.current = now;
       setNowTick(now);
       setActiveBooster((b) => (b && b.expiresAt <= now ? null : b));
+      // Report offline earnings once, the first time this interval fires
+      // after (re)opening the app — anything under ~1 minute is just normal
+      // background-tab throttling, not a real "you were away" gap.
+      if (firstTick) {
+        firstTick = false;
+        if (deltaHours > 1 / 60 && energyRef.current > 0) {
+          const cap = storageCapRef.current;
+          const earned = Math.min(effectiveIncomeRef.current * deltaHours, Math.max(0, cap - pendingRef.current));
+          if (earned > 0) {
+            notifyRef.current(`Welcome back! +${fmt(earned)} CORE mined while you were away`);
+          }
+        }
+      }
       if (energyRef.current <= 0) return;
       const income = effectiveIncomeRef.current;
       const cap = storageCapRef.current;
@@ -2153,7 +2189,7 @@ export default function CoreMiningApp() {
 
   const shareReferral = useCallback(() => {
     haptic("light");
-    const shareText = "Yuk gabung mining CORE bareng aku! 🚀";
+    const shareText = "Join me mining CORE! 🚀";
     if (tg?.openTelegramLink) {
       tg.openTelegramLink(
         `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`
@@ -2161,7 +2197,7 @@ export default function CoreMiningApp() {
     } else if (navigator?.clipboard?.writeText) {
       navigator.clipboard
         .writeText(referralLink)
-        .then(() => notify("Link referral disalin!"))
+        .then(() => notify("Referral link copied!"))
         .catch(() => notify(`Your link: ${referralLink}`));
     } else {
       notify(`Your link: ${referralLink}`);
