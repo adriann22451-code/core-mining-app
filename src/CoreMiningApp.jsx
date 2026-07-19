@@ -408,6 +408,40 @@ const ENERGY_PACK_CATALOG = [
   { key: "fullcharge", name: "Full Charge", rarity: "epic", amount: 500, price: 40, desc: "A full tank — comparable to the backup capacity an industrial UPS gives a rack of miners." },
 ];
 
+// Limited-time promo bundle(s) — bundles a top-tier rig + top-tier component
+// + an energy top-up together at a discount vs. buying each piece
+// separately. Shown as its own promo crate above the regular energy packs
+// in the Market's "Packs" tab. `discountPct` is applied to the *combined*
+// normal price of its contents (computed live from the other catalogs by
+// getBundlePricing below), so the savings shown always stays accurate even
+// if rig/component/pack prices change later — nothing here is hardcoded.
+const BUNDLE_CATALOG = [
+  {
+    key: "legendary_kit",
+    name: "Legendary Miner Kit",
+    rarity: "legendary",
+    rigKey: "quantum",
+    componentKey: "rtx5090",
+    energyAmount: 500,
+    discountPct: 20,
+    desc: "A flagship rig, a flagship GPU, and a full energy tank — everything you need to jump straight to the top tier in one crate.",
+  },
+];
+
+// Computes a bundle's contents + pricing: normalPrice is the sum of buying
+// the rig, the component, and the energy (priced off the closest energy
+// pack's CORE-per-kWh rate) separately; price is that total after the
+// bundle's discount, rounded to a clean number.
+function getBundlePricing(bundle) {
+  const rig = RIG_CATALOG.find((r) => r.key === bundle.rigKey);
+  const comp = COMPONENT_CATALOG.find((c) => c.key === bundle.componentKey);
+  const ref = ENERGY_PACK_CATALOG[ENERGY_PACK_CATALOG.length - 1];
+  const energyValue = (bundle.energyAmount / ref.amount) * ref.price;
+  const normalPrice = Math.round((rig?.baseCost ?? 0) + (comp?.price ?? 0) + energyValue);
+  const price = Math.round((normalPrice * (1 - bundle.discountPct / 100)) / 10) * 10;
+  return { rig, comp, normalPrice, price };
+}
+
 // 7-day check-in cycle for the Profile "Daily Bonus" tile. Streak wraps back
 // to day 1 after day 7 (and resets to day 1 if a day is missed).
 // Kept deliberately tiny — CORE is meant to be scarce and earned mainly
@@ -852,6 +886,92 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
         {price}
       </p>
       <div className="w-full mt-1.5">{action}</div>
+    </GlowCard>
+  );
+}
+
+// Promo crate for a bundle deal (top-tier rig + top-tier component + energy,
+// sold together at a discount). Wider than a normal ShopCard so all three
+// contents plus the price comparison fit in one glanceable card — a treasure
+// chest ("Package") as the hero icon, mini icons of exactly what's inside,
+// and a discount ribbon so the deal is obvious before reading any numbers.
+function BundleCard({ bundle, onBuy, disabled, disabledReason }) {
+  const { rig, comp, normalPrice, price } = getBundlePricing(bundle);
+  const rar = RARITY_STYLE[bundle.rarity];
+  if (!rig || !comp) return null;
+  return (
+    <GlowCard accent={rar.color} brackets className="p-4 relative overflow-hidden">
+      <div
+        className="absolute inset-x-3 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${rar.color}aa, transparent)` }}
+      />
+      <span
+        className="absolute top-3 right-3 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+        style={{ color: "#0A1220", background: rar.color, boxShadow: `0 0 10px -1px ${rar.color}` }}
+      >
+        -{bundle.discountPct}% OFF
+      </span>
+
+      <div className="flex items-center gap-3 pr-14">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+          style={{
+            background: `radial-gradient(circle, ${rar.color}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
+            boxShadow: `inset 0 0 0 1px ${rar.color}66`,
+            filter: `drop-shadow(0 0 10px ${rar.color}cc) drop-shadow(0 0 20px ${rar.color}55)`,
+          }}
+        >
+          <Package size={28} color={rar.color} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[9px] font-bold tracking-wide" style={{ color: rar.color }}>
+            {rar.label.toUpperCase()} BUNDLE
+          </p>
+          <p className="text-white font-extrabold text-sm leading-snug truncate">{bundle.name}</p>
+        </div>
+      </div>
+
+      <p className="text-[10px] text-slate-500 leading-relaxed mt-2">{bundle.desc}</p>
+
+      <div className="flex items-center gap-1.5 mt-3">
+        <div className="rounded-lg p-1" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <RigIcon rigKey={rig.key} rarity={rig.rarity} size={28} />
+        </div>
+        <Plus size={11} color="#5B6B82" className="shrink-0" />
+        <div className="rounded-lg p-1" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <ComponentIcon compKey={comp.key} rarity={comp.rarity} size={28} />
+        </div>
+        <Plus size={11} color="#5B6B82" className="shrink-0" />
+        <div
+          className="w-[28px] h-[28px] rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: `linear-gradient(155deg, ${C.orange}2E, #0A1220)`, border: `1px solid ${C.orange}66` }}
+        >
+          <Zap size={14} color={C.orange} />
+        </div>
+        <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: C.orange }}>
+          +{bundle.energyAmount} kWh
+        </span>
+      </div>
+
+      <div
+        className="flex items-center justify-between gap-2 mt-3 pt-3"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        <div>
+          <p className="text-[10px] text-slate-500 line-through tabular-nums">{fmt(normalPrice, 0)} CORE</p>
+          <p className="text-white text-sm font-extrabold tabular-nums">
+            {fmt(price, 0)} <span style={{ color: rar.color }}>CORE</span>
+          </p>
+        </div>
+        <FuturisticButton onClick={onBuy} disabled={disabled} accent={rar.color} accent2={C.blue} size="sm">
+          Buy Bundle
+        </FuturisticButton>
+      </div>
+      {disabled && disabledReason && (
+        <p className="text-[9px] mt-1.5 text-center" style={{ color: C.orange }}>
+          {disabledReason}
+        </p>
+      )}
     </GlowCard>
   );
 }
@@ -3159,6 +3279,34 @@ export default function CoreMiningApp() {
     notify(`+${pack.amount} kWh from ${pack.name}`);
   };
 
+  // Promo bundle purchase: same as buying the rig + component + an energy
+  // top-up separately, just as one transaction at the bundle's discounted
+  // price. Still respects the rig-slot cap like a normal rig buy.
+  const buyBundle = (bundle) => {
+    haptic("light");
+    if (owned.length >= MAX_RIGS) {
+      notify(`Rig limit reached (${MAX_RIGS}/${MAX_RIGS})`, "error");
+      return;
+    }
+    const { rig, comp, price } = getBundlePricing(bundle);
+    if (!rig || !comp) return;
+    if (balance < price) {
+      notify("Not enough CORE", "error");
+      return;
+    }
+    setBalance((b) => b - price);
+    const id = `${rig.key}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const capacity = SLOT_CAPACITY[rig.rarity] ?? 2;
+    setOwned((o) => [...o, { ...rig, id, level: 1, durability: 100, active: true, slots: Array(capacity).fill(null) }]);
+    setComponentInventory((inv) => ({
+      ...inv,
+      [comp.key]: [...(inv[comp.key] || []), makeComponentInstance(comp.key, 100)],
+    }));
+    setEnergy((e) => Math.min(MAX_ENERGY_KWH, e + bundle.energyAmount));
+    setMissionProgress((mp) => ({ ...mp, purchases: mp.purchases + 1 }));
+    notify(`${bundle.name} unlocked — ${rig.name}, ${comp.name} + ${bundle.energyAmount} kWh`);
+  };
+
   // ---- Marketplace ---------------------------------------------------------
   // List a rig you own for sale: it's snapshotted (level, durability) and
   // pulled out of `owned` — stops mining/wearing while listed. Installed
@@ -3759,6 +3907,7 @@ export default function CoreMiningApp() {
             onBuyBooster={buyBooster}
             energy={energy}
             onBuyEnergyPack={buyEnergyPack}
+            onBuyBundle={buyBundle}
           />
         )}
         {tab === "marketplace" && (
@@ -4339,7 +4488,7 @@ function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, 
 // ---------------------------------------------------------------------------
 // MARKET
 // ---------------------------------------------------------------------------
-function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, componentInventory, onBuyComponent, activeBooster, onBuyBooster, energy, onBuyEnergyPack }) {
+function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, componentInventory, onBuyComponent, activeBooster, onBuyBooster, energy, onBuyEnergyPack, onBuyBundle }) {
   const tabs = ["Rigs", "Components", "Boosters", "Packs"];
   return (
     <div>
@@ -4461,7 +4610,23 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               );
             })
         ) : filter === "Packs" ? (
-          ENERGY_PACK_CATALOG.map((pack) => {
+          <>
+            {BUNDLE_CATALOG.map((bundle) => {
+              const atCap = ownedRigCount >= MAX_RIGS;
+              const { price } = getBundlePricing(bundle);
+              const canAfford = balance >= price && !atCap;
+              return (
+                <div key={bundle.key} className="col-span-2">
+                  <BundleCard
+                    bundle={bundle}
+                    onBuy={() => onBuyBundle(bundle)}
+                    disabled={!canAfford}
+                    disabledReason={atCap ? `Rig limit reached (${MAX_RIGS}/${MAX_RIGS})` : !canAfford ? "Not enough CORE" : null}
+                  />
+                </div>
+              );
+            })}
+            {ENERGY_PACK_CATALOG.map((pack) => {
             const rar = RARITY_STYLE[pack.rarity];
             const isFull = energy >= MAX_ENERGY_KWH;
             const canAfford = balance >= pack.price;
@@ -4487,7 +4652,8 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 }
               />
             );
-          })
+            })}
+          </>
         ) : (
           <p className="text-slate-500 text-xs text-center mt-10 col-span-2">
             {filter} coming soon.
