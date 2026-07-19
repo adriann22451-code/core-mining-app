@@ -567,7 +567,7 @@ const FOUNDER_SUPPLY = MAX_SUPPLY * (ALLOCATION_PCT.founder / 100); // 5,000,000
 // where TonConnect sends deposited TON. Get one from your TON wallet app.
 const TREASURY_TON_ADDRESS = "UQDkQYsWZm8-ib8Vco22U9kKFrPzkTDTFl2D3I3VNGu8K0YT";
 // How much CORE a deposit is credited as, per TON sent. Tune to your economy.
-const DEPOSIT_CORE_PER_TON = 100_000;
+const DEPOSIT_CORE_PER_TON = 100;
 const MIN_DEPOSIT_TON = 0.1;
 const QUICK_DEPOSIT_AMOUNTS_TON = [0.5, 1, 2, 5];
 // Withdrawals aren't paid out automatically (no live on-chain CORE token yet
