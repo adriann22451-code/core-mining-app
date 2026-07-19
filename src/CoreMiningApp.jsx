@@ -3521,6 +3521,10 @@ export default function CoreMiningApp() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.45; }
         }
+        @keyframes core-modal-pop {
+          0% { opacity: 0; transform: scale(0.92) translateY(8px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
       `}</style>
 
       {/* Ambient scanline sweeping down the whole screen */}
@@ -4662,8 +4666,8 @@ function SellItemModal({ owned, componentInventory, onClose, onListRig, onListCo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(3,5,10,0.72)" }} onClick={onClose}>
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }} onClick={onClose}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.cyan} brackets className="p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white font-extrabold text-sm tracking-wide">SELL AN ITEM</h2>
@@ -5067,10 +5071,10 @@ function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onCla
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px]" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.purple} brackets className="p-5">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -5093,18 +5097,39 @@ function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onCla
               return (
                 <div
                   key={r.day}
-                  className="rounded-xl p-2 flex flex-col items-center gap-1"
+                  className="relative rounded-xl p-2 flex flex-col items-center gap-1"
                   style={{
-                    background: isToday ? `${C.cyan}18` : done ? `${C.green}0F` : "rgba(255,255,255,0.03)",
+                    background: isToday
+                      ? `linear-gradient(160deg, ${C.cyan}30, rgba(10,14,24,0.92))`
+                      : done
+                      ? `linear-gradient(160deg, ${C.green}22, rgba(10,14,24,0.92))`
+                      : "linear-gradient(160deg, rgba(255,255,255,0.05), rgba(10,14,24,0.92))",
                     border: `1px solid ${borderColor}`,
+                    boxShadow: isToday
+                      ? `0 0 14px -3px ${C.cyan}AA, inset 0 0 0 1px ${C.cyan}33`
+                      : done
+                      ? `0 0 10px -4px ${C.green}88`
+                      : "none",
                     animation: isToday && !claimedToday ? "core-pulse-ring 2.4s ease-out infinite" : undefined,
                   }}
                 >
-                  {done ? (
-                    <Check size={13} color={C.green} />
-                  ) : (
-                    <Gift size={13} color={isToday ? C.cyan : "#5B6B82"} />
-                  )}
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{
+                      background: done ? `${C.green}2E` : isToday ? `${C.cyan}2E` : "rgba(255,255,255,0.05)",
+                      filter: done
+                        ? `drop-shadow(0 0 5px ${C.green}99)`
+                        : isToday
+                        ? `drop-shadow(0 0 6px ${C.cyan}bb)`
+                        : "none",
+                    }}
+                  >
+                    {done ? (
+                      <Check size={12} color={C.green} />
+                    ) : (
+                      <Gift size={12} color={isToday ? C.cyan : "#5B6B82"} />
+                    )}
+                  </div>
                   <span className="text-[8px] text-slate-500">Day {r.day}</span>
                   {r.core > 0 && (
                     <span
@@ -5148,10 +5173,10 @@ function MissionsModal({ onClose, missionProgress, missionClaimed, onClaim }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.blue} brackets className="p-5">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -5232,10 +5257,10 @@ function QuestsModal({ onClose, metrics, claimed, onClaim }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.purple} brackets className="p-5">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -5341,10 +5366,10 @@ function CodexModal({ onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.cyan} brackets className="p-5">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -5432,10 +5457,10 @@ const AchievementsModal = React.memo(function AchievementsModal({ onClose, metri
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[75vh] flex flex-col min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[75vh] flex flex-col min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.orange} brackets className="flex flex-col overflow-hidden max-h-full min-h-0">
           <div className="flex items-center justify-between px-5 pt-5 pb-1 shrink-0">
             <div className="flex items-center gap-2">
@@ -5568,10 +5593,10 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[75vh] flex flex-col min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[75vh] flex flex-col min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.green} brackets className="flex flex-col overflow-hidden max-h-full min-h-0">
           <div className="flex items-center justify-between px-5 pt-5 pb-1 shrink-0">
             <div className="flex items-center gap-2">
@@ -5931,10 +5956,10 @@ function LegalModal({ kind, onClose }) {
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.cyan} brackets className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -6000,10 +6025,10 @@ function SettingsModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.cyan} brackets className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -6225,10 +6250,10 @@ function CreatePoolModal({ balance, miningPower, onClose, onCreate }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px]" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.cyan} brackets className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -6322,10 +6347,10 @@ function PoolDetailModal({ pool, joinedPoolId, miningPower, poolIncomePerHour, o
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.purple} brackets className="p-5">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -6503,10 +6528,10 @@ function WalletDepositModal({ onClose, balance, setBalance, initData, notify, ha
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px]" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <div
           className="relative overflow-hidden rounded-2xl p-5"
           style={{
@@ -6676,10 +6701,10 @@ function WalletWithdrawModal({ onClose, balance, setBalance, initData, notify, h
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px]" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <div
           className="relative overflow-hidden rounded-2xl p-5"
           style={{
@@ -7103,10 +7128,10 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(3,5,10,0.72)" }}
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <div
           className="relative overflow-hidden rounded-2xl p-5"
           style={{
