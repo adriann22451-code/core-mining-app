@@ -4024,7 +4024,16 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
           const isFeatured = featuredRigId === r.id;
           const filledSlots = (r.slots || []).filter(Boolean).length;
           return (
-            <GlowCard key={r.id} accent={rar.color} className="p-3 relative">
+            <GlowCard
+              key={r.id}
+              accent={rar.color}
+              brackets
+              className="p-3 relative transition-transform duration-150 active:scale-[0.97]"
+            >
+              <div
+                className="absolute inset-x-3 top-0 h-px"
+                style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
+              />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -4041,6 +4050,10 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
               </button>
               <button onClick={() => onSelect(r)} className="text-left w-full">
                 <div className="flex items-center justify-center h-16 relative">
+                  <div
+                    className="absolute w-14 h-14 rounded-xl"
+                    style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
+                  />
                   <RigIcon rigKey={r.key} rarity={r.rarity} size={52} />
                 </div>
                 <p className="text-white text-xs font-bold mt-2">{r.name}</p>
@@ -4077,7 +4090,7 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
       </div>
 
       <div className="px-4 mt-5">
-        <p className="text-[11px] text-slate-400 tracking-wide mb-2">COMPONENT INVENTORY (unassigned)</p>
+        <p className="text-[11px] text-slate-400 tracking-wide mb-2">COMPONENTS (unassigned)</p>
         {stockEntries.length === 0 ? (
           <p className="text-slate-500 text-[11px]">
             None in stock — buy components in Market, then install them onto a rig from the Upgrade tab.
@@ -4090,7 +4103,16 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
               const rar = RARITY_STYLE[c.rarity];
               const sorted = units.slice().sort((a, b) => (b.durability ?? 100) - (a.durability ?? 100));
               return (
-                <GlowCard key={key} accent={rar.color} className="p-3 relative">
+                <GlowCard
+                  key={key}
+                  accent={rar.color}
+                  brackets
+                  className="p-3 relative transition-transform duration-150 active:scale-[0.97]"
+                >
+                  <div
+                    className="absolute inset-x-3 top-0 h-px"
+                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
+                  />
                   <span
                     className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: `${rar.color}22`, color: rar.color }}
@@ -4098,6 +4120,10 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                     x{units.length}
                   </span>
                   <div className="flex items-center justify-center h-16 relative">
+                    <div
+                      className="absolute w-14 h-14 rounded-xl"
+                      style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
+                    />
                     <ComponentIcon compKey={c.key} rarity={c.rarity} size={52} />
                   </div>
                   <p className="text-white text-xs font-bold mt-2">{c.name}</p>
@@ -4119,6 +4145,49 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                       );
                     })}
                   </div>
+                </GlowCard>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="px-4 mt-5 mb-4">
+        <p className="text-[11px] text-slate-400 tracking-wide mb-2">MATERIALS</p>
+        {MATERIAL_CATALOG.every((m) => !(materialInventory[m.key] > 0)) ? (
+          <p className="text-slate-500 text-[11px]">
+            None yet — earn materials from Quests (Profile tab).
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => {
+              const rar = RARITY_STYLE[m.rarity];
+              return (
+                <GlowCard
+                  key={m.key}
+                  accent={rar.color}
+                  brackets
+                  className="p-3 relative transition-transform duration-150 active:scale-[0.97]"
+                >
+                  <div
+                    className="absolute inset-x-3 top-0 h-px"
+                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
+                  />
+                  <span
+                    className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: `${rar.color}22`, color: rar.color }}
+                  >
+                    ×{materialInventory[m.key]}
+                  </span>
+                  <div className="flex items-center justify-center h-16 relative">
+                    <div
+                      className="absolute w-14 h-14 rounded-xl"
+                      style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
+                    />
+                    <MaterialIcon materialKey={m.key} rarity={m.rarity} size={48} />
+                  </div>
+                  <p className="text-white text-xs font-bold mt-2">{m.name}</p>
+                  <p className="text-[10px]" style={{ color: rar.color }}>{rar.label}</p>
                 </GlowCard>
               );
             })}
@@ -4158,60 +4227,63 @@ function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, 
         )}
       </GlowCard>
 
-      {RECIPES.map((recipe) => {
-        const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
-        if (!comp) return null;
-        const rar = RARITY_STYLE[comp.rarity];
-        const cost = CRAFT_COST_BY_RARITY[comp.rarity] ?? 0;
-        const owned = (componentInventory[comp.key] || []).length;
-        const hasMaterials = recipe.materials.every((m) => (materialInventory[m.key] || 0) >= m.qty);
-        const canAfford = balance >= cost && hasMaterials;
-        return (
-          <ShopRow
-            key={recipe.key}
-            accent={rar.color}
-            icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />}
-            title={comp.name}
-            rarityLabel={rar.label}
-            badges={owned > 0 ? [<Chip key="owned" color={rar.color}>owned x{owned}</Chip>] : null}
-            chips={recipe.materials.map((m) => {
-              const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
-              const matRar = mat ? RARITY_STYLE[mat.rarity] : null;
-              const have = materialInventory[m.key] || 0;
-              const enough = have >= m.qty;
-              return (
-                <Chip key={m.key} color={enough ? (matRar?.color ?? C.green) : C.orange}>
-                  {m.qty}× {mat?.name ?? m.key} ({have})
-                </Chip>
-              );
-            })}
-            price={<>{fmt(cost, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
-            action={
-              <>
-                <FuturisticButton
-                  onClick={() => onCraft(recipe)}
-                  disabled={!canAfford}
-                  accent={rar.color}
-                  accent2={C.blue}
-                  full={false}
-                  size="sm"
-                >
-                  Craft
-                </FuturisticButton>
-                {owned > 0 && (
-                  <button
-                    onClick={() => onRecycle(comp.key)}
-                    className="text-[9px] font-semibold px-2 py-1 rounded-lg"
-                    style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
+      <div className="grid grid-cols-2 gap-2.5">
+        {RECIPES.map((recipe) => {
+          const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
+          if (!comp) return null;
+          const rar = RARITY_STYLE[comp.rarity];
+          const cost = CRAFT_COST_BY_RARITY[comp.rarity] ?? 0;
+          const owned = (componentInventory[comp.key] || []).length;
+          const hasMaterials = recipe.materials.every((m) => (materialInventory[m.key] || 0) >= m.qty);
+          const canAfford = balance >= cost && hasMaterials;
+          return (
+            <ShopCard
+              key={recipe.key}
+              accent={rar.color}
+              icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={30} />}
+              title={comp.name}
+              rarityLabel={rar.label}
+              stat={[
+                owned > 0 && <Chip key="owned" color={rar.color}>owned x{owned}</Chip>,
+                ...recipe.materials.map((m) => {
+                  const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+                  const matRar = mat ? RARITY_STYLE[mat.rarity] : null;
+                  const have = materialInventory[m.key] || 0;
+                  const enough = have >= m.qty;
+                  return (
+                    <Chip key={m.key} color={enough ? (matRar?.color ?? C.green) : C.orange}>
+                      {m.qty}× {mat?.name ?? m.key} ({have})
+                    </Chip>
+                  );
+                }),
+              ].filter(Boolean)}
+              price={<>{fmt(cost, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+              action={
+                <div className="flex flex-col gap-1">
+                  <FuturisticButton
+                    onClick={() => onCraft(recipe)}
+                    disabled={!canAfford}
+                    accent={rar.color}
+                    accent2={C.blue}
+                    size="sm"
                   >
-                    Recycle
-                  </button>
-                )}
-              </>
-            }
-          />
-        );
-      })}
+                    Craft
+                  </FuturisticButton>
+                  {owned > 0 && (
+                    <button
+                      onClick={() => onRecycle(comp.key)}
+                      className="text-[9px] font-semibold px-2 py-1 rounded-lg w-full"
+                      style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
+                    >
+                      Recycle
+                    </button>
+                  )}
+                </div>
+              }
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -4713,58 +4785,58 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
       </div>
 
       <div className="px-4 mt-3">
-        <GlowCard accent={rar.color} brackets className="p-5">
+        <GlowCard accent={rar.color} brackets className="p-3.5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white font-bold text-sm">{rig.name}</p>
               <p className="text-[11px]" style={{ color: rar.color }}>{rar.label}</p>
             </div>
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              Level {level} <ArrowUpCircle size={14} color={C.green} /> Level {level + 1}
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-300">
+              Lv.{level} <ArrowUpCircle size={12} color={C.green} /> Lv.{level + 1}
             </div>
           </div>
 
           <button
             onClick={() => onToggleActive(rig)}
-            className="w-full flex items-center justify-between mt-3 px-3 py-2 rounded-xl"
+            className="w-full flex items-center justify-between mt-2.5 px-2.5 py-1.5 rounded-xl"
             style={{
               background: isOn ? `${C.green}12` : "rgba(255,255,255,0.03)",
               border: `1px solid ${isOn ? C.green + "55" : "#2a3346"}`,
             }}
           >
-            <span className="flex items-center gap-2 text-[11px] font-semibold" style={{ color: isOn ? C.green : "#8FA3B8" }}>
-              <Zap size={13} color={isOn ? C.green : "#5B6B82"} />
-              {isOn ? "Rig is ON — mining actively" : "Rig is OFF — not mining"}
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: isOn ? C.green : "#8FA3B8" }}>
+              <Zap size={12} color={isOn ? C.green : "#5B6B82"} />
+              {isOn ? "Mining actively" : "Rig OFF — not mining"}
             </span>
             <span
               className="relative inline-flex items-center rounded-full transition-colors"
-              style={{ width: 34, height: 18, background: isOn ? C.green : "#2a3346" }}
+              style={{ width: 30, height: 16, background: isOn ? C.green : "#2a3346" }}
             >
               <span
                 className="absolute rounded-full bg-white transition-all"
-                style={{ width: 14, height: 14, top: 2, left: isOn ? 18 : 2 }}
+                style={{ width: 12, height: 12, top: 2, left: isOn ? 16 : 2 }}
               />
             </span>
           </button>
 
-          <div className="flex justify-center my-5">
+          <div className="flex justify-center my-3">
             <div className="rounded-2xl" style={{ animation: "core-pulse-ring 2.4s ease-out infinite" }}>
-              <RigIcon rigKey={rig.key} rarity={rig.rarity} size={92} />
+              <RigIcon rigKey={rig.key} rarity={rig.rarity} size={64} />
             </div>
           </div>
 
           {isBroken && (
             <div
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold mb-4"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold mb-3"
               style={{ background: "#FF525215", border: "1px solid #FF525255", color: "#FF7A7A" }}
             >
-              <Wrench size={13} /> This rig is broken and mining at 0% — repair it to restore output.
+              <Wrench size={12} /> Broken — mining at 0% until repaired.
             </div>
           )}
 
-          <p className="text-[11px] text-slate-400 leading-snug mb-4">{RIG_CATALOG.find((c) => c.key === rig.key)?.desc}</p>
+          <p className="text-[10px] text-slate-400 leading-snug mb-3">{RIG_CATALOG.find((c) => c.key === rig.key)?.desc}</p>
 
-          <div className="flex items-center justify-between text-xs mb-4">
+          <div className="flex items-center justify-between text-[11px] mb-2.5">
             <span className="text-slate-400">Hash Power</span>
             <span className="text-white tabular-nums">
               {fmt(power)} TH/s <span style={{ color: C.green }}>→ {fmt(nextPower)} TH/s</span>
@@ -4772,26 +4844,26 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
           </div>
 
           <StatBar label="Efficiency" value={eff} color={C.cyan} />
-          <div className="flex items-center justify-between text-xs mb-3">
+          <div className="flex items-center justify-between text-[11px] mb-2.5">
             <span className="text-slate-400 flex items-center gap-1">
-              <Zap size={12} color={C.orange} /> Energy Draw
+              <Zap size={11} color={C.orange} /> Energy Draw
             </span>
             <span className="text-white tabular-nums">
               {kwh} kWh/hr
             </span>
           </div>
           <StatBar label="Durability" value={dur} color={durColor} />
-          <p className="text-[10px] text-slate-500 -mt-2 mb-3">
-            Wears {wearPerHour}%/hr while active — full durability lasts ~{Math.round(100 / wearPerHour)}h before it needs a repair.
+          <p className="text-[10px] text-slate-500 -mt-2 mb-2.5">
+            Wears {wearPerHour}%/hr while active · full charge lasts ~{Math.round(100 / wearPerHour)}h.
           </p>
 
           {/* Component slots */}
-          <div className="mt-1 mb-4">
+          <div className="mt-1 mb-3">
             <p className="text-[11px] text-slate-400 tracking-wide mb-1">
               COMPONENT SLOTS ({filledSlots}/{slots.length})
             </p>
-            <p className="text-[10px] text-slate-500 mb-2">
-              Each GPU wears down on its own — its power/boost output is reduced by its own durability AND this rig's durability together.
+            <p className="text-[9px] text-slate-500 mb-1.5 leading-snug">
+              Each GPU's output is reduced by its own durability and the rig's, together.
             </p>
             <div className="grid grid-cols-4 gap-2">
               {slots.map((slot, i) => {
@@ -4806,12 +4878,12 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
                       className="relative"
                       title={`${Math.round(compDur)}% durability — tap to remove`}
                     >
-                      <ComponentIcon compKey={slot.key} rarity={c?.rarity} size={48} />
+                      <ComponentIcon compKey={slot.key} rarity={c?.rarity} size={40} />
                       <span
-                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                        className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center"
                         style={{ background: "#0A0D16", border: "1px solid #FF525288" }}
                       >
-                        <X size={9} color="#FF7A7A" />
+                        <X size={8} color="#FF7A7A" />
                       </span>
                       <div className="absolute -bottom-1 left-0.5 right-0.5 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.12)" }}>
                         <div className="h-full" style={{ width: `${compDur}%`, background: compDurColor }} />
@@ -4825,20 +4897,20 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
                     onClick={() => setPickerSlot(pickerSlot === i ? null : i)}
                     className="rounded-xl flex items-center justify-center shrink-0"
                     style={{
-                      width: 48,
-                      height: 48,
+                      width: 40,
+                      height: 40,
                       border: `1px dashed ${pickerSlot === i ? C.cyan : "#2a3346"}`,
                       background: pickerSlot === i ? `${C.cyan}10` : "transparent",
                     }}
                   >
-                    <Plus size={16} color={pickerSlot === i ? C.cyan : "#5B6B82"} />
+                    <Plus size={14} color={pickerSlot === i ? C.cyan : "#5B6B82"} />
                   </button>
                 );
               })}
             </div>
 
             {pickerSlot !== null && (
-              <GlowCard accent={C.cyan} className="p-3 mt-2">
+              <GlowCard accent={C.cyan} className="p-2.5 mt-1.5">
                 <p className="text-[10px] text-slate-400 mb-2">Choose a component to install</p>
                 {stockEntries.length === 0 ? (
                   <p className="text-[11px] text-slate-500">
@@ -4864,7 +4936,7 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
                           className="flex items-center gap-2 p-2 rounded-lg"
                           style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${crar.color}44` }}
                         >
-                          <ComponentIcon compKey={key} rarity={c.rarity} size={32} />
+                          <ComponentIcon compKey={key} rarity={c.rarity} size={28} />
                           <div className="flex-1 text-left">
                             <p className="text-white text-xs font-semibold">{c.name}</p>
                             <p className="text-[10px]" style={{ color: C.green }}>+{c.boostPct}% · +{c.power} TH/s</p>
@@ -4919,9 +4991,10 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
               disabled={balance < repairCost}
               accent={durColor}
               accent2={C.orange}
-              className="mt-2"
+              size="sm"
+              className="mt-1.5"
             >
-              <Wrench size={14} /> Repair · {fmt(repairCost, 0)} CORE
+              <Wrench size={13} /> Repair · {fmt(repairCost, 0)} CORE
             </FuturisticButton>
           )}
 
@@ -4930,9 +5003,10 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
             disabled={!canAfford}
             accent={C.cyan}
             accent2={C.purple}
-            className="mt-2"
+            size="sm"
+            className="mt-1.5"
           >
-            <Sparkles size={14} /> Upgrade · {fmt(cost, 0)} CORE
+            <Sparkles size={13} /> Upgrade · {fmt(cost, 0)} CORE
           </FuturisticButton>
         </GlowCard>
       </div>
