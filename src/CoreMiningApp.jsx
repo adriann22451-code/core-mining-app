@@ -801,6 +801,16 @@ const ASSET_URLS = {
     powercell: null,
     fullcharge: null,
   },
+  materials: {
+    silicon_die: null,
+    vram_chip: null,
+    pcb_board: null,
+    power_connector: null,
+    cooling_fan: null,
+    thermal_paste: null,
+    copper_heatsink: null,
+    asic_chip: null,
+  },
   nav: {
     home: "data:image/webp;base64,UklGRjITAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSDUEAAABoEZrmyFJer+IbK5t27Zt27Zt27Zte1vFsW3bnunOiHjX2xX11d85ETEBWNxrqXBiYWwls0AtYEylMoJl7x703m5AIpXIWOC0YST53nqAlUojFti1gUy9C5x2z9qAlYpigXVfd/SeJB05/ZHVAFs5rGCp26aTjv8cHDnx1qUBUxmMBc4aRKaB/zE4cvBpFlIBJAH2bCJd4P8MjuxxgBjtJAHWfSvQebajb+VnsMpZYPkHZpCO7Zv6D0Q5Qc2Vo0jH9k75BqpVs3JUTzINbHfHZgNYtaQam5HOs5SBnU82MEYnC2z8S0hZ4kAWDgWs0ccKlnlwLgNL7j357XaANboYA5wxhPSM0Qe2vrM5YEUPscC+LaQLjNSR81/YAEhEB0mAzT8mnWe8wZFznl0LSEQBC6zyxDwGx7hDSs54bA0gkTIzgrrrJpCO8QdHTr1jKcCWk7HAyX3INLAsQ0oOvmQJGCtlIhbYo4F0gWUbHNnnMABWykASYKO3Ar1nWXtHNpxRA9joLLDsQ7MZHMveB7LvRdUQG5eg6uJhpKOKzpE9TgKMiQnHdiddoJbekb/uBViJxVR9QDpPTb0nv90GsQrqx/lWausCFzy0lEgUEMlRYxd4P2wcqDtg5zy9OlzY9jySSAA8yjZ9yOdhY6kyJ7b6oExg45FLCmIVmBH0ugTOWBoRC2wfbTzHLGVNTKLQyDpITKa3PiMiqxqoz+j6yAbrM6IuLtNXn+G1caFnxetR6Wx/fUbUxVUztNLVDtdneG1cdSP0GVUfV+2wCmeWHKHP2GVsTMB4Bm1GAPGI7Hz3AiobOOviXUw0Ft/Ta/N3vyFMNF86p09IuTtsJAa/p4uCNqEtbd0cJpoGqty6YjSCrS++fwi9JoEzXv70KghifompJp6dEbepTV71qjjf0VobExLcRKdJygZYRC1m6Q/o9PCh+7Fi4kKCS5nqkfJmJIhNbtPlbhsfbtLldpTBVbrcUQ4X02lyVzmcp8sd5XAFU03uK4drdHmgHK6udOZaXe430dXgal3uQU1cxmC7PsHr4UOP9WElogS4eC4DFQ2ccjpgYxGLtT4lPVX15IvLwkoUFjhzIl2gssFzyLGALZ1YrPAu6ahwSr6+AqyUSIBDhtIFquw9hx0JSEkESz1FplQ7JZ9cClICkRW70Xsq7gP7rCem/RJcyEVUfhHPQlKKy+lTr1lIPQ+HbT+RFd5pI32aunL03jnvSpqmnuSny4i039+3enoIFZ/0zq4osRig/qAH3/vo869//L2psSGbyeRacrlcLpNtac40ZvLNmUwmm83mCh075DO5YiaTzXcoForFzl26de3QsUvHDoVCsfm3n3/+vbmlobmQKxbyxY4dG35uzP7+zXvPHL8iYKQ0gLFQ3RpEKDax1pp/lP9ppIR/EwHk78YYI2LknwFjRIyxiRUshjQAVlA4INYOAABQOACdASqAAIAAPjEWiEKiISEXieVoIAMEoA1bWhPs8lS0f4XaFK28lnmnzweibzBOdd5gP2A/ZL3Uv+h6kPQA/VXrSf69/1/YT/Xr06fZH/t3/M9ILNEf4B+G/6u+QHeb+LfKf3z+x/tt/ZvZA/lu7lz35o/yj73/nfLfvP+Cf+B6hHsH/V+hf7j/wO3bsR/wPUC9m/qn+0/Nf+4ekp/qehX5l/b/+h7gH8r/oX+79R/9B4b/2H/MewL/Rf6f/uf7p+5P/G+mD+h/7/+T/L33DfRv/W/zPwEfzX+u/8T+/fvF8aXsC/a/2Pv1iSS/YHkmB1Q2WrKx7Qz8fR6PzQ2eE4gQ9rfKLI8LLKeSh//3xuiDf0lc/L/6cKSnfmCpUHyTcoVNwKofDiuuAqCHASc4F7yvujAkX2DuNKaNzgVrRv3i44RW/+VeW5cZujBQI/6TqJObTaj299i0vP1zKsia0gbI4l/gDZ0Lb5Mp7wC2h+pOMf2dwjfu+cVIvoO23d8/XXNHKeMZAh9j78CljqTclCecOC46NebUg1mvoWXs2z7YtaGYbqkH0rOIYNhYJesINZW2jx86lcMNGMzH9atv0UwQ6XiPGmrnRnAA/v8NZAAZfXwLuu1SMxTuvy2Oq/eeAB07OBYx3llVZwvbTbTzDoJwjo1cQylKK0ZaIPyZLdtNGS1kuQU1giMT590mdEyKDM9AljcP1brjjRsSyOTEPrR+vn596J6PQo2O0QdTJdufMLWtKmBzWneFbXwP+LfbZAKcuTD9+eVjC5fqWNQpM2RIg8say+6fbZDbe9H76cjBxdAs9d17XsHnjrrjg9hJO2ybquZzEMYPxkqxAjvoU3Z71FJGGA7gAtI7YdpxIr08Oi9YZhnRBUhh/EI9kWg6U/JJva7V5swFbMcnJzyGE5kb6NueiW1F8JZvEgGb+M+/Lp1kcfpLI4H16Ib5zAT3aSpendkZb3YEwY+lSuIRReCupPpgjcAAy0EgxuupcrJa70SyBb/C7Rd58G/YtRLynZaYRjVMsPIsP6Ryl5o81Ex7HHkPm73VrkYpjbTvRF5U8aJkML7kj718KHxqP75PeyOh6lQ0jtQa7FeU50Z8GyHgWIZv2/d4rN/oL/n9yiCKIukkEfNYI+uAxfJUsWGha+FzfiZzr1LpGuV3HMgd7OMJeuHmTBFchovtDU9DHIm+KXjngFrnv8ALLdV4ub/pk3lu4yPKXPyZnEkOBXdljFNVQzMSMUqVxxW+oEOOdrwsw9LOQAygGjAhG3vGa+V2u0gjItdllaO1bB3A7ZLxKBcFj4tp2UL1i/h+bNTC3GwhizVcazjgDeXP61K217Gdda5zLDtxeFTLtMK+QgcQNPyP/dX79ymgA0kEc9jKwa0r1Zw04Mk3jTM+LF83kwTCL5opL7BFFeLmimqJFK1mUeSZiNxjsWmTI19ZRa+pRT0QHjBB7TTdih8Ym/3kesd1AznmWw5mmoUwAS9e7wADIf4plM8n/81vTORMbUS0AmagRGT6G03oOUOx8kVUiBLObi5YgJ/EQGiKBf1UqLiOnx6X+TvWGZ711BwYDOzS+oxXCpBKwQyXjUKDYWyQwVclCrS8lE3uT+TgLFjHbv/qXfHOvFpsbR3HTwyxY1IoF8Z37olyglObii9dANdGcblj7KPg8sjakPgIEkyBPe6/o9rqxBz8sw/rWe/JFkMzHiIlLYSi7VzAAnQPt0cJ8OVJUv2sTym1goO+jQnOKKjPXkesrhWk4p0/Bke4P/+iNGRo57dGjVdHqAdfjBomt7QXC49bshbn+Ya9O2NjVfZmLUGlWxegri4UD8JP+I64lod2djwGpif3op/SZyZAisx6xh72HbCRJyOxP48S9RrtV7hYaU5cdQbRAeZyEMf2AFad7ujdVqvEyjVb0/wmnB6JDv+HmcZNmhkJLxXfflZUApAqihXuaSA1bzkfl625J3XfE6YGQNCSJqz0MPhp6R3xo4koubt+a5Rz3r7QXMfQvmc8wjqoYuqsw0OTA4EPERrSt9AoB8PbnPh+iGSNP/sfAw6wopmCAGUqtCsDIzIampaBsMt9AKwwPU+eGkHvlhek+Vb/rWbAX8koFgUpLMpG+wLk//XgF/nMuczhlreS9YYL9nSiaX/s/vz4KTX52IZ5gugygF62Ch65nRrjhURc98VxfJoY0ZKMd5ebDb0Fmu31gk6UfTc8T++I3IB3vF4ubGFais3A+otbfB01xKvNPPzRdX1Z0EVr7p9cIdpOXi8Ggf4X7UDGPzRN3Rr82qG0B4hovemBhGckhkmwU4ePoIO+yUKbUAa/XJmNRDxNtsLrgZ41QM122QwrMBjs9V9sshWoTZRqOmjnSTvAqkP6mmQUC5RpdU7cs08rfZ2ews33nM5pOVOr5WneMC3fspovkivOZclOR2Paden1TjHRFAq9F9t7zCTAUWWfU3JJd6WG64t/UXYWmPspx56aA/CNtl/9hOpdScSauukpSgoPuuYJqHnfV7o8B+AKeip/+q7NeaiLMxb0S3FNUa6i+lS7q1aK4agkXbubXZbuf4zoJflJTfG2DP2zRJ2JUmjFTYGPLhZmyw34YH1yiYqJVYDikbP/UYETzV3+v/QmwQcWw6H2Ctl0gP6XoFnqrnCvHaPuvhOODQYuPDMCoooP16H4MVvBpTQ0Na9eIHGPrWX9K1I74jBgGi+gA9rCMyIANf2G4B3lW4pUJdIBjn989AwpNhjm4mFsGXYSiwzxBM9kkyYo9sNk6ESoNCwKcCvhJk2uB+GR5ghS778pSc2CcJgOYAt6G+a8pM3m2gwo1GffTUhAt2CCHv/2hbLznNL0Xp5VOfAzIAtHL2D1HSq40JF6pwSobmraTYeRP4HIik1pJIGdfQZgLyTbymlrAsfL3lBeQRGBU2ALYfP1gE4z4KtZk6anmyZWoYXHt3QTdqDATH7+nhjkwxfNJpPTu0rLN5a1TeenB2gD5+CD2tVAhMyVhxpZO3CvJVWY/DHtkpPRJWG4XhcbxluwZYRwuO0+3UGSDJ6wUSVomLwinOapDzBX23WF8MdQxFpZEz20WPeR67JcB1YHJB54VHd+2kcRP4iSmCqRAaZ3r3S8Xr+dZvSr4QVcKu7AKqF78qY29qhGjfvk5kpsXjzXwmYPruTP4YWuaPuGqSAI+6qYR7qr6k9qak0++StO1pue7UGgE9ZY+Ay+H4zECFlgfUp2eukhy1n2oahfFGemEalNY0N8j0cjxXjcuhk/feNaPViFQa/O6PU5wX2YgGheaG+AJHeEmO137AQn8615vjzT9+an26t3drwCUEYaZF45ltc8rkYIhY9y/cCLloehy2l/2LHoowe4ukoBQgVJkHwZTSwGw7GdfGtGnu3EiiUGKM/aBbJGDSOkT+/RFXRkROG4dgw7M67+a3umNhJOC3LhAKBSWqhgDr0cXiZKwknfh7So1sgQ3WKAuXcctPej+fcBfI8tQiEl3Cn7AYLcG/21v7+QDSN44U9/t/cWzbPnfha7I5oBfTKCdg352QNUHEeMG8HDozoP+gf3OqQ5YmopZ45HX3N2Nyf6ri0O7EyPYQ/hzrnDrQKsyxQv7qQIy5XCJvlTtc+eH7/l4Uhqxrswf6mDuhw/YtdltoNnHsz5Pc2laS1Fz7UNmivdW9bmfpMaVEoBS1Y4DjJffMp9WC/31mCjL8f3U7gV+GaGa96sD1Mb3XJaaHSs9yd0KkQ2E/EDKAmf6JhqPcKHC5vHdfnrGO/UiP8ak6hP0C39S3BVPNB3YwONnt1booOejJ9ij/mWjLkkJDR4V0vAoBjpnhd/0GFvi9Rq82BdkB7vbW3jXx4EIAeg7ifq8wd3tHGzaiw+HYJU0vkrmTWW7VaZOfeubf4izno0gPJ5wsnL9u1pvmjyeGsZJAwwIg41UQv8aeV6VXFegcPCsFTecabAEC995AdsuI82mD/vgspgSC9uSgazO2IGrBX/nmDZ+8Hqfyw541proSBeaxxod2FH4/ZJ1rbzHoPrjR9eWPMxgrjEOvPMmJfWSX9Z2Q9dNMLd9VkLc1aGDqg6twS0Ao9p9qoBRJPHCBwxFac4BDC5NGpQbiYYMQ+KCFG4yxDryBfwCwjJvlNMhlOgs82N/z6W1oG/4MkTcE0MF7oCXkzx11r3HRXmwUlC4DojGZlkXR7NgaT9nWlwbC3vxyzaOkjPSuPWA504Jo7gLgMlxJhqeZea6hcnIw4oeUVIlto0/7kp/ZMJszb/2lHdvwVjp371ZL6PR3oZPUJPktmteJyFiCj+v2XSg64tvt/GozsTAid6T/b5P7N6Z7JC1JEzhQSo0iP8i3eEtm2GEhf+BmRSPBfUysPp+XY1hupyiFFkBQXICDwAuL7HAqzs5OXfbKUvw3QrEq1GtNKOx+P3w6nhl7xMn6vvRAGQJDeDa+iiBJaJYhJBXCIbbHGzh8KIwA4zQIokPz61Ky28Q9FsSp32EDwHIKxrCgaFvoHcyo2yjTrQgZ2y9/FOFbtjfnNP2wOxrZjrf6/OdXMrQQU430tWnpHkoQPwE/1fsgpUC3sk9uBQD4PR3u4ddaJQfTLvJzhF+NG7ZImE3bPvULyPvoLm4tsSrZV5SB9ehQkVVFUeEoQJ8/Rr21CC4iYkGvSQxwz05wz/VYQnBW/o3uszbODbxlAvUxbVgQq506catZWli6KmnFl765e9SRsEWA28tqXZW+d68oRx9g+CUL6LQ9gKtPAr/saDAaOgFR1YjSZS6tBTsDFjFGQosfsAHxXNY7I9NPV2rX+3XuRZhKQnCafaHK5QZDXHQCkogTspD1i6t3CCDwUkWbpeETS7LY5EwB0JjNdsAnS64AObKn9KBaLobS9Pz/gkpuij74kJsu+3QZzumuw59VL47rQFxH4OROw2YFnhnpDm+O6LEstfaJXXHvi8WLQMFkGiV3iWsl7T0LyRBe96AowPe6R8ha0JQOlRf5WubcYi5zfOBG/n51XN3ypqCH80rhXKMZ3cvdOLujgf0pZRJklZo9oECzOfbKMeh3WPrRlBghZS5gs4P4x9Fn9/teUIDXMIx4AAAAA=",
     market: "data:image/webp;base64,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",
@@ -1248,6 +1258,141 @@ function HardwareGlyph({ id, color, size = 20 }) {
         </svg>
       );
 
+    // ---- Crafting materials: real GPU/rig teardown parts, each drawn to
+    // read at a glance (die, memory IC, board, connector, fan, paste,
+    // heatsink, ASIC) rather than sharing one generic "part" glyph ----
+    case "mat-silicon_die":
+      // Bare unpackaged chip die — small square with a fine bond-pad grid
+      // and four corner pads, like a die photographed before packaging.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="24" y="24" width="52" height="52" rx="3" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          <rect x="34" y="34" width="32" height="32" rx="1" fill={`url(#${uid}-glow)`} opacity="0.55" />
+          <line x1="34" y1="44" x2="66" y2="44" stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <line x1="34" y1="54" x2="66" y2="54" stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <line x1="44" y1="34" x2="44" y2="66" stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <line x1="54" y1="34" x2="54" y2="66" stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="18" y="18" width="6" height="6" fill={color} fillOpacity="0.8" />
+          <rect x="76" y="18" width="6" height="6" fill={color} fillOpacity="0.8" />
+          <rect x="18" y="76" width="6" height="6" fill={color} fillOpacity="0.8" />
+          <rect x="76" y="76" width="6" height="6" fill={color} fillOpacity="0.8" />
+        </svg>
+      );
+    case "mat-vram_chip":
+      // Memory IC — wide rectangular package with pins along both long
+      // edges and a notch marking pin 1, like a GDDR BGA/FBGA part.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="20" y="32" width="60" height="36" rx="4" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          {[38, 46, 54, 62].map((y) => (
+            <React.Fragment key={y}>
+              <rect x="10" y={y} width="10" height="4" fill={color} fillOpacity="0.7" />
+              <rect x="80" y={y} width="10" height="4" fill={color} fillOpacity="0.7" />
+            </React.Fragment>
+          ))}
+          <circle cx="28" cy="40" r="2.4" fill={`url(#${uid}-glow)`} />
+          <line x1="34" y1="52" x2="66" y2="52" stroke={color} strokeOpacity="0.35" strokeWidth="1.4" />
+          <line x1="34" y1="58" x2="58" y2="58" stroke={color} strokeOpacity="0.35" strokeWidth="1.4" />
+        </svg>
+      );
+    case "mat-pcb_board":
+      // Bare circuit board — traces running to via dots and a couple of
+      // mounted-pad silhouettes, the substrate everything else solders onto.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="14" y="14" width="72" height="72" rx="5" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.6" />
+          <path d="M22 30 H50 V44 H70" stroke={color} strokeOpacity="0.45" strokeWidth="2" fill="none" />
+          <path d="M22 70 H40 V56 H78" stroke={color} strokeOpacity="0.45" strokeWidth="2" fill="none" />
+          <circle cx="22" cy="30" r="2.6" fill={color} fillOpacity="0.8" />
+          <circle cx="70" cy="44" r="2.6" fill={color} fillOpacity="0.8" />
+          <circle cx="22" cy="70" r="2.6" fill={color} fillOpacity="0.8" />
+          <circle cx="78" cy="56" r="2.6" fill={color} fillOpacity="0.8" />
+          <rect x="46" y="60" width="20" height="14" rx="2" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "mat-power_connector":
+      // High-current connector — a trapezoidal plug shell with a row of
+      // pin sockets, modeled on a PCIe/ATX-style power connector.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <path d="M22 30 L78 30 L70 76 L30 76 Z" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          {[36, 50, 64].map((x) => (
+            <React.Fragment key={x}>
+              <circle cx={x} cy="44" r="4.2" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="1" strokeOpacity="0.6" />
+              <circle cx={x} cy="62" r="4.2" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="1" strokeOpacity="0.6" />
+            </React.Fragment>
+          ))}
+          <rect x="16" y="22" width="10" height="10" rx="2" fill={color} fillOpacity="0.7" />
+        </svg>
+      );
+    case "mat-cooling_fan":
+      // Bare fan blade assembly — hub with radial blades, no shroud, unlike
+      // the fans built into RigIcon/ComponentIcon glyphs.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <circle cx="50" cy="50" r="38" fill={`url(#${uid}-front)`} stroke={color} strokeOpacity="0.35" strokeWidth="1.4" />
+          {[0, 72, 144, 216, 288].map((deg) => (
+            <path
+              key={deg}
+              d="M50 50 L50 20 Q60 26 58 40 Z"
+              fill={color}
+              fillOpacity="0.35"
+              transform={`rotate(${deg} 50 50)`}
+            />
+          ))}
+          <circle cx="50" cy="50" r="9" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.8" />
+          <circle cx="50" cy="50" r="2.6" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "mat-thermal_paste":
+      // Syringe-style tube — the way thermal compound is actually sold and
+      // applied, with a bead of paste at the nozzle tip.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="38" y="16" width="10" height="10" rx="1.5" fill={color} fillOpacity="0.7" />
+          <path d="M40 26 L44 26 L48 40 L36 40 Z" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.6" />
+          <rect x="30" y="40" width="24" height="40" rx="7" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          <rect x="34" y="46" width="16" height="8" rx="2" fill={color} fillOpacity="0.25" />
+          <circle cx="42" cy="82" r="6" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "mat-copper_heatsink":
+      // Finned metal block — parallel cooling fins over a base plate, the
+      // real geometry that gives a heatsink its surface area.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="16" y="60" width="68" height="16" rx="3" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          {[20, 32, 44, 56, 68, 80].map((x) => (
+            <rect key={x} x={x - 3} y="22" width="6" height="40" rx="1.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1" strokeOpacity="0.5" />
+          ))}
+          <rect x="34" y="66" width="32" height="5" rx="1.5" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "mat-asic_chip":
+      // Hash-specific ASIC die — same die silhouette as silicon_die but
+      // with a dense hex/dot core instead of a plain grid, reading as a
+      // more specialised, purpose-built chip.
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="22" y="22" width="56" height="56" rx="4" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.7" strokeOpacity="0.7" />
+          <polygon points="50,32 64,40 64,58 50,66 36,58 36,40" fill={`url(#${uid}-glow)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.8" />
+          {[28, 42, 58, 72].map((x) => (
+            <rect key={`t-${x}`} x={x - 2} y="14" width="4" height="8" fill={color} fillOpacity="0.75" />
+          ))}
+          {[28, 42, 58, 72].map((x) => (
+            <rect key={`b-${x}`} x={x - 2} y="78" width="4" height="8" fill={color} fillOpacity="0.75" />
+          ))}
+        </svg>
+      );
+
     default:
       return (
         <svg viewBox="0 0 100 100" {...s}>
@@ -1346,6 +1491,29 @@ function PackIcon({ packKey, rarity = "common", size = 40 }) {
         <img src={customSrc} alt={packKey} className="w-full h-full object-cover" />
       ) : (
         <HardwareGlyph id={`pack-${packKey}`} color={rar.color} size={Math.round(size * 0.58)} />
+      )}
+    </div>
+  );
+}
+
+function MaterialIcon({ materialKey, rarity = "common", size = 40 }) {
+  const rar = RARITY_STYLE[rarity];
+  const customSrc = ASSET_URLS.materials[materialKey];
+  return (
+    <div
+      className="relative flex items-center justify-center rounded-xl shrink-0 overflow-hidden"
+      style={{
+        width: size,
+        height: size,
+        background: `linear-gradient(155deg, ${rar.color}2E, #0A1220)`,
+        border: `1px solid ${rar.color}66`,
+        boxShadow: `0 0 14px -4px ${rar.color}AA inset, 0 0 10px -3px ${rar.color}88`,
+      }}
+    >
+      {customSrc ? (
+        <img src={customSrc} alt={materialKey} className="w-full h-full object-cover" />
+      ) : (
+        <HardwareGlyph id={`mat-${materialKey}`} color={rar.color} size={Math.round(size * 0.58)} />
       )}
     </div>
   );
@@ -3937,11 +4105,15 @@ function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, 
         {MATERIAL_CATALOG.every((m) => !(materialInventory[m.key] > 0)) ? (
           <p className="text-[10px] text-slate-500">None yet — earn materials from Quests (Profile tab).</p>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-4 gap-2">
             {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => {
               const rar = RARITY_STYLE[m.rarity];
               return (
-                <Chip key={m.key} color={rar.color}>{m.name} ×{materialInventory[m.key]}</Chip>
+                <div key={m.key} className="flex flex-col items-center gap-1">
+                  <MaterialIcon materialKey={m.key} rarity={m.rarity} size={36} />
+                  <span className="text-[8px] text-slate-400 text-center leading-tight">{m.name}</span>
+                  <span className="text-[9px] font-bold" style={{ color: rar.color }}>×{materialInventory[m.key]}</span>
+                </div>
               );
             })}
           </div>
@@ -5015,7 +5187,7 @@ const CODEX_SECTIONS = [
   { key: "components", label: "Components", icon: Cpu, catalog: COMPONENT_CATALOG, iconRender: (item) => <ComponentIcon compKey={item.key} rarity={item.rarity} size={40} /> },
   { key: "boosters", label: "Boosters", icon: Flame, catalog: BOOSTER_CATALOG, iconRender: (item) => <BoosterIcon boostKey={item.key} rarity={item.rarity} size={40} /> },
   { key: "packs", label: "Packs", icon: Zap, catalog: ENERGY_PACK_CATALOG, iconRender: (item) => <PackIcon packKey={item.key} rarity={item.rarity} size={40} /> },
-  { key: "materials", label: "Materials", icon: Boxes, catalog: MATERIAL_CATALOG, iconRender: null },
+  { key: "materials", label: "Materials", icon: Boxes, catalog: MATERIAL_CATALOG, iconRender: (item) => <MaterialIcon materialKey={item.key} rarity={item.rarity} size={40} /> },
 ];
 
 function CodexModal({ onClose }) {
