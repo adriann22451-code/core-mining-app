@@ -6,7 +6,7 @@ import {
   Gift, Trophy, Users, Target, ChevronLeft, Bell, Settings, Sparkles,
   Gauge, ShieldCheck, Flame, Coins, Check, X, Boxes,
   Search, Wrench, Star, Plus, Volume2, Vibrate, Globe, ChevronDown,
-  HelpCircle, FileText, Music, ArrowUpDown
+  HelpCircle, FileText, Music, ArrowUpDown, Cpu
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -240,16 +240,16 @@ const MAX_RIGS = 25;
 // the budget option and currently only ships up to a mid-range card in real
 // life, so it stops at "rare" instead of getting a legendary tier.
 const COMPONENT_CATALOG = [
-  { key: "rtx5060", name: "RTX 5060", brand: "NVIDIA", rarity: "common", tflops: 19.2, vram: "8GB GDDR7", msrp: 299, boostPct: 10, power: 8, price: 480, wearPerHour: 3 },
-  { key: "rtx5080", name: "RTX 5080", brand: "NVIDIA", rarity: "rare", tflops: 56.3, vram: "16GB GDDR7", msrp: 999, boostPct: 28, power: 23, price: 1350, wearPerHour: 4 },
-  { key: "rtx4090", name: "RTX 4090", brand: "NVIDIA", rarity: "epic", tflops: 82.6, vram: "24GB GDDR6X", msrp: 1599, boostPct: 41, power: 33, price: 1950, wearPerHour: 5 },
-  { key: "rtx5090", name: "RTX 5090", brand: "NVIDIA", rarity: "legendary", tflops: 104.8, vram: "32GB GDDR7", msrp: 1999, boostPct: 52, power: 42, price: 2350, wearPerHour: 6.5 },
-  { key: "rx7600", name: "Radeon RX 7600", brand: "AMD", rarity: "common", tflops: 21.5, vram: "8GB GDDR6", msrp: 269, boostPct: 9, power: 7, price: 430, wearPerHour: 3 },
-  { key: "rx7800xt", name: "Radeon RX 7800 XT", brand: "AMD", rarity: "rare", tflops: 37.3, vram: "16GB GDDR6", msrp: 499, boostPct: 26, power: 21, price: 1220, wearPerHour: 4 },
-  { key: "rx7900xtx", name: "Radeon RX 7900 XTX", brand: "AMD", rarity: "epic", tflops: 61.4, vram: "24GB GDDR6", msrp: 999, boostPct: 39, power: 31, price: 1780, wearPerHour: 5 },
-  { key: "rx9070xt", name: "Radeon RX 9070 XT", brand: "AMD", rarity: "legendary", tflops: 48.7, vram: "16GB GDDR6", msrp: 599, boostPct: 50, power: 40, price: 2150, wearPerHour: 6.5 },
-  { key: "arc_a380", name: "Arc A380", brand: "Intel", rarity: "common", tflops: 4.1, vram: "6GB GDDR6", msrp: 139, boostPct: 5, power: 4, price: 150, wearPerHour: 2.5 },
-  { key: "arc_b580", name: "Arc B580", brand: "Intel", rarity: "rare", tflops: 13.7, vram: "12GB GDDR6", msrp: 249, boostPct: 16, power: 13, price: 620, wearPerHour: 3.5 },
+  { key: "rtx5060", name: "RTX 5060", brand: "NVIDIA", rarity: "common", tflops: 19.2, vram: "8GB GDDR7", msrp: 299, boostPct: 10, power: 8, price: 480, wearPerHour: 3, desc: "NVIDIA's mainstream Blackwell-generation card — an affordable 1080p/1440p workhorse, not built for serious hashing but cheap to slot in." },
+  { key: "rtx5080", name: "RTX 5080", brand: "NVIDIA", rarity: "rare", tflops: 56.3, vram: "16GB GDDR7", msrp: 999, boostPct: 28, power: 23, price: 1350, wearPerHour: 4, desc: "High-end Blackwell card with GDDR7 memory — a big step up in compute and bandwidth over the previous generation's mid-range." },
+  { key: "rtx4090", name: "RTX 4090", brand: "NVIDIA", rarity: "epic", tflops: 82.6, vram: "24GB GDDR6X", msrp: 1599, boostPct: 41, power: 33, price: 1950, wearPerHour: 5, desc: "The previous-generation Ada Lovelace flagship — still one of the most powerful consumer cards ever made, and a favorite in compute rigs." },
+  { key: "rtx5090", name: "RTX 5090", brand: "NVIDIA", rarity: "legendary", tflops: 104.8, vram: "32GB GDDR7", msrp: 1999, boostPct: 52, power: 42, price: 2350, wearPerHour: 6.5, desc: "NVIDIA's current flagship — 32GB of GDDR7 and the highest raw throughput of any card on the market today." },
+  { key: "rx7600", name: "Radeon RX 7600", brand: "AMD", rarity: "common", tflops: 21.5, vram: "8GB GDDR6", msrp: 269, boostPct: 9, power: 7, price: 430, wearPerHour: 3, desc: "AMD's budget RDNA 3 card — solid 1080p performance at a price built to undercut the equivalent NVIDIA tier." },
+  { key: "rx7800xt", name: "Radeon RX 7800 XT", brand: "AMD", rarity: "rare", tflops: 37.3, vram: "16GB GDDR6", msrp: 499, boostPct: 26, power: 21, price: 1220, wearPerHour: 4, desc: "A mid-high RDNA 3 card known for strong price-to-performance and generous 16GB VRAM for the tier." },
+  { key: "rx7900xtx", name: "Radeon RX 7900 XTX", brand: "AMD", rarity: "epic", tflops: 61.4, vram: "24GB GDDR6", msrp: 999, boostPct: 39, power: 31, price: 1780, wearPerHour: 5, desc: "AMD's RDNA 3 flagship — a chiplet-based design that matches high-end NVIDIA cards in raw power at a lower price." },
+  { key: "rx9070xt", name: "Radeon RX 9070 XT", brand: "AMD", rarity: "legendary", tflops: 48.7, vram: "16GB GDDR6", msrp: 599, boostPct: 50, power: 40, price: 2150, wearPerHour: 6.5, desc: "AMD's newer RDNA 4 architecture — a big efficiency jump per watt over RDNA 3, aimed squarely at the mid-to-high tier." },
+  { key: "arc_a380", name: "Arc A380", brand: "Intel", rarity: "common", tflops: 4.1, vram: "6GB GDDR6", msrp: 139, boostPct: 5, power: 4, price: 150, wearPerHour: 2.5, desc: "Intel's first-generation Alchemist discrete GPU — an entry-level card that put Intel back in the graphics card market." },
+  { key: "arc_b580", name: "Arc B580", brand: "Intel", rarity: "rare", tflops: 13.7, vram: "12GB GDDR6", msrp: 249, boostPct: 16, power: 13, price: 620, wearPerHour: 3.5, desc: "Intel's Battlemage-generation card — praised at launch for unusually strong price-to-performance and a generous 12GB of VRAM." },
 ];
 
 // ---------------------------------------------------------------------------
@@ -402,9 +402,9 @@ const NEW_MINER_START_ENERGY_KWH = 60;
 // itself worse per-kWh than Quick Charge, so the "optimal" play was to
 // spam the smallest pack and ignore the other two entirely.
 const ENERGY_PACK_CATALOG = [
-  { key: "quickcharge", name: "Quick Charge", rarity: "common", amount: 100, price: 10 },
-  { key: "powercell", name: "Power Cell", rarity: "rare", amount: 250, price: 22 },
-  { key: "fullcharge", name: "Full Charge", rarity: "epic", amount: 500, price: 40 },
+  { key: "quickcharge", name: "Quick Charge", rarity: "common", amount: 100, price: 10, desc: "A small top-up — like plugging into a standard wall circuit for a quick refill between shifts." },
+  { key: "powercell", name: "Power Cell", rarity: "rare", amount: 250, price: 22, desc: "A mid-size reserve, the kind of buffer a small farm keeps on a battery bank for brief grid outages." },
+  { key: "fullcharge", name: "Full Charge", rarity: "epic", amount: 500, price: 40, desc: "A full tank — comparable to the backup capacity an industrial UPS gives a rack of miners." },
 ];
 
 // 7-day check-in cycle for the Profile "Daily Bonus" tile. Streak wraps back
@@ -1950,6 +1950,7 @@ export default function CoreMiningApp() {
   const [materialInventory, setMaterialInventory] = useState(savedGame.materialInventory ?? {}); // { [materialKey]: count }
   const [questClaimed, setQuestClaimed] = useState(savedGame.questClaimed ?? []);
   const [showQuestsModal, setShowQuestsModal] = useState(false);
+  const [showCodexModal, setShowCodexModal] = useState(false);
   const [featuredRigId, setFeaturedRigId] = useState(savedGame.featuredRigId ?? null); // manually pinned rig instance for Home hero
   const [activeBooster, setActiveBooster] = useState(savedGame.activeBooster ?? null); // { key, name, boostPct, expiresAt }
   const [nowTick, setNowTick] = useState(Date.now());
@@ -2581,6 +2582,7 @@ export default function CoreMiningApp() {
   }, [haptic, notify, addXp]);
 
   const closeQuestsModal = useCallback(() => setShowQuestsModal(false), []);
+  const closeCodexModal = useCallback(() => setShowCodexModal(false), []);
 
   const referralLink = `https://t.me/${BOT_USERNAME}/${MINI_APP_SHORT_NAME}?startapp=${referralCode}`;
 
@@ -3277,6 +3279,8 @@ export default function CoreMiningApp() {
         />
       )}
 
+      {showCodexModal && <CodexModal onClose={closeCodexModal} />}
+
       {showReferralModal && (
         <ReferralModal
           onClose={closeReferralModal}
@@ -3473,6 +3477,7 @@ export default function CoreMiningApp() {
             questsClaimReady={QUESTS.some(
               (q) => (metrics[q.metric] || 0) >= q.target && !questClaimed.includes(q.key)
             )}
+            onOpenCodex={() => { haptic("light"); setShowCodexModal(true); }}
             onOpenSettings={() => { haptic("light"); setShowSettingsModal(true); }}
           />
         )}
@@ -5000,8 +5005,101 @@ function QuestsModal({ onClose, metrics, claimed, onClaim }) {
 }
 
 // ---------------------------------------------------------------------------
-// ACHIEVEMENTS
+// CODEX (in-game encyclopedia — every rig/component/booster/pack/material)
 // ---------------------------------------------------------------------------
+// Pure reference — no economy effects, just the flavor/desc text already
+// attached to each catalog entry (grounded in real mining/GPU-hardware facts,
+// see the comments on each catalog above) surfaced in one browsable place.
+const CODEX_SECTIONS = [
+  { key: "rigs", label: "Rigs", icon: Gauge, catalog: RIG_CATALOG, iconRender: (item) => <RigIcon rigKey={item.key} rarity={item.rarity} size={40} /> },
+  { key: "components", label: "Components", icon: Cpu, catalog: COMPONENT_CATALOG, iconRender: (item) => <ComponentIcon compKey={item.key} rarity={item.rarity} size={40} /> },
+  { key: "boosters", label: "Boosters", icon: Flame, catalog: BOOSTER_CATALOG, iconRender: (item) => <BoosterIcon boostKey={item.key} rarity={item.rarity} size={40} /> },
+  { key: "packs", label: "Packs", icon: Zap, catalog: ENERGY_PACK_CATALOG, iconRender: (item) => <PackIcon packKey={item.key} rarity={item.rarity} size={40} /> },
+  { key: "materials", label: "Materials", icon: Boxes, catalog: MATERIAL_CATALOG, iconRender: null },
+];
+
+function CodexModal({ onClose }) {
+  const [section, setSection] = useState("rigs");
+  const active = CODEX_SECTIONS.find((s) => s.key === section) ?? CODEX_SECTIONS[0];
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(3,5,10,0.72)" }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+        <GlowCard accent={C.cyan} brackets className="p-5">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <FileText size={16} color={C.cyan} />
+              <h2 className="text-white font-extrabold text-sm tracking-wide">CODEX</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-400 mb-3">A field guide to every rig, part, booster, and material in CORE — grounded in real mining and GPU hardware.</p>
+
+          <div className="flex gap-1.5 mb-3 flex-wrap">
+            {CODEX_SECTIONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setSection(s.key)}
+                className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg"
+                style={{
+                  background: section === s.key ? `${C.cyan}1F` : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${section === s.key ? C.cyan : "#1c2536"}`,
+                  color: section === s.key ? C.cyan : "#8FA3B8",
+                }}
+              >
+                <s.icon size={11} /> {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {active.catalog.map((item) => {
+              const rar = RARITY_STYLE[item.rarity];
+              const desc = item.desc ?? item.fact;
+              return (
+                <div
+                  key={item.key}
+                  className="rounded-xl p-3 flex gap-2.5"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
+                >
+                  {active.iconRender ? (
+                    <div className="shrink-0 flex items-center justify-center">{active.iconRender(item)}</div>
+                  ) : (
+                    <div
+                      className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ background: `${rar.color}18` }}
+                    >
+                      <Boxes size={18} color={rar.color} />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-white text-xs font-bold">{item.name}</p>
+                      <span className="text-[9px] font-bold" style={{ color: rar.color }}>{rar.label}</span>
+                    </div>
+                    {item.brand && (
+                      <p className="text-[9px] mt-0.5" style={{ color: "#5B6B82" }}>{item.brand}</p>
+                    )}
+                    {desc && (
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">{desc}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </GlowCard>
+      </div>
+    </div>
+  );
+}
+
+
 const ACHIEVEMENTS_PER_PAGE = 4;
 
 // Memoized with a custom comparator: only the metric fields ACHIEVEMENTS
@@ -5277,7 +5375,7 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
 // ---------------------------------------------------------------------------
 // PROFILE
 // ---------------------------------------------------------------------------
-function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenSettings }) {
+function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenCodex, onOpenSettings }) {
   const pct = (xp / xpToNext) * 100;
   const tiles = [
     { icon: Trophy, label: "Achievements", color: C.orange },
@@ -5286,6 +5384,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
     { icon: Users, label: "Referral", color: C.green },
     { icon: Target, label: "Missions", color: C.blue },
     { icon: Boxes, label: "Quests", color: C.purple },
+    { icon: FileText, label: "Codex", color: C.cyan },
   ];
 
   const displayName = user
@@ -5384,6 +5483,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
           const isAchievements = t.label === "Achievements";
           const isReferral = t.label === "Referral";
           const isQuests = t.label === "Quests";
+          const isCodex = t.label === "Codex";
           return (
             <button
               key={t.label}
@@ -5400,8 +5500,11 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
                   ? onOpenReferral()
                   : isQuests
                   ? onOpenQuests()
+                  : isCodex
+                  ? onOpenCodex()
                   : notify(`${t.label} opened`)
               }
+              className={isCodex ? "col-span-2" : ""}
             >
               <GlowCard accent={t.color} className="p-4 flex flex-col items-center gap-2 relative">
                 {((isDaily && dailyClaimAvailable) ||
