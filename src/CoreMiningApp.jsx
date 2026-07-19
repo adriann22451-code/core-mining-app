@@ -934,6 +934,68 @@ function HardwareGlyph({ id, color, size = 20 }) {
         </svg>
       );
 
+    // ---- ASIC rigs: same iso chassis, but a rectangular vent grille instead
+    // of round GPU-style fans, reflecting real ASIC miner intake screens ----
+    case "rig-avalon_nano":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* single small grille — compact home unit */}
+            <rect x="22" y="52" width="20" height="16" rx="2" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.7" />
+            <line x1="25" y1="56" x2="39" y2="56" stroke={color} strokeOpacity="0.5" strokeWidth="1.2" />
+            <line x1="25" y1="60" x2="39" y2="60" stroke={color} strokeOpacity="0.5" strokeWidth="1.2" />
+            <line x1="25" y1="64" x2="39" y2="64" stroke={color} strokeOpacity="0.5" strokeWidth="1.2" />
+            <circle cx="50" cy="24" r="2.4" fill={color} />
+          </IsoRigShell>
+        </svg>
+      );
+    case "rig-avalon_a15":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* twin grilles — mid-size unit */}
+            <rect x="18" y="46" width="16" height="14" rx="2" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.7" />
+            <line x1="21" y1="50" x2="31" y2="50" stroke={color} strokeOpacity="0.5" strokeWidth="1" />
+            <line x1="21" y1="53" x2="31" y2="53" stroke={color} strokeOpacity="0.5" strokeWidth="1" />
+            <line x1="21" y1="56" x2="31" y2="56" stroke={color} strokeOpacity="0.5" strokeWidth="1" />
+            <rect x="18" y="66" width="16" height="14" rx="2" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.7" />
+            <line x1="21" y1="70" x2="31" y2="70" stroke={color} strokeOpacity="0.5" strokeWidth="1" />
+            <line x1="21" y1="73" x2="31" y2="73" stroke={color} strokeOpacity="0.5" strokeWidth="1" />
+            <line x1="21" y1="76" x2="31" y2="76" stroke={color} strokeOpacity="0.5" strokeWidth="1" />
+            <rect x="60" y="18" width="18" height="4" rx="1.5" fill={color} fillOpacity="0.7" />
+          </IsoRigShell>
+        </svg>
+      );
+    case "rig-whatsminer_m60s":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* stacked triple grille — industrial farm unit */}
+            <rect x="18" y="42" width="15" height="12" rx="1.8" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.1" strokeOpacity="0.7" />
+            <rect x="18" y="58" width="15" height="12" rx="1.8" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.1" strokeOpacity="0.7" />
+            <rect x="18" y="74" width="15" height="12" rx="1.8" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.1" strokeOpacity="0.7" />
+            <rect x="58" y="15" width="24" height="3.5" rx="1.5" fill={color} fillOpacity="0.75" />
+            <rect x="58" y="20" width="18" height="3" rx="1.5" fill={color} fillOpacity="0.5" />
+          </IsoRigShell>
+        </svg>
+      );
+    case "rig-antminer_s21":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <IsoRigShell uid={uid} color={color}>
+            {/* coolant loop on the top face — marks this as the hydro-cooled flagship */}
+            <path d="M40 24 Q50 14 60 24 Q70 34 60 40 Q50 46 40 40 Q30 34 40 24 Z" fill="none" stroke={color} strokeWidth="2" strokeOpacity="0.7" />
+            <circle cx="50" cy="32" r="3" fill={`url(#${uid}-glow)`} />
+            <rect x="20" y="50" width="18" height="14" rx="2" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+            <circle cx="29" cy="57" r="4.5" fill={`url(#${uid}-glow)`} />
+          </IsoRigShell>
+        </svg>
+      );
+
     // ---- Components: GPU card silhouette (shroud + fans + backplate edge),
     // referencing the general shape of real graphics cards ----
     case "comp-rtx5060":
@@ -990,6 +1052,92 @@ function HardwareGlyph({ id, color, size = 20 }) {
           <circle cx="28" cy="53" r="2.2" fill={`url(#${uid}-glow)`} />
           <circle cx="50" cy="53" r="2.6" fill={`url(#${uid}-glow)`} />
           <circle cx="72" cy="53" r="2.2" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+
+    // ---- AMD cards: same shroud/fan language as the NVIDIA line, plus a
+    // diagonal accent cut on the shroud so the brand reads at a glance ----
+    case "comp-rx7600":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="10" y="20" width="14" height="14" rx="2" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.2" />
+          <rect x="12" y="34" width="76" height="34" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.55" />
+          <path d="M16 40 L30 40 L24 62 L16 62 Z" fill={color} fillOpacity="0.22" />
+          <circle cx="56" cy="55" r="12" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.75" />
+          <circle cx="56" cy="55" r="3" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "comp-rx7800xt":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="8" y="20" width="14" height="14" rx="2" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.2" />
+          <rect x="10" y="34" width="80" height="34" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.55" />
+          <path d="M14 40 L26 40 L20 62 L14 62 Z" fill={color} fillOpacity="0.22" />
+          <circle cx="42" cy="55" r="10.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="70" cy="55" r="10.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="42" cy="55" r="2.6" fill={`url(#${uid}-glow)`} />
+          <circle cx="70" cy="55" r="2.6" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "comp-rx7900xtx":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="18" y="16" width="8" height="16" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="30" y="14" width="8" height="18" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="64" y="14" width="8" height="18" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="10" y="36" width="80" height="32" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
+          <path d="M14 42 L28 42 L20 66 L14 66 Z" fill={color} fillOpacity="0.22" />
+          <circle cx="40" cy="52" r="10" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="72" cy="52" r="10" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="40" cy="52" r="2.5" fill={`url(#${uid}-glow)`} />
+          <circle cx="72" cy="52" r="2.5" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "comp-rx9070xt":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="16" y="14" width="7" height="20" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="28" y="12" width="7" height="22" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="65" y="12" width="7" height="22" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="77" y="14" width="7" height="20" rx="1.5" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1" />
+          <rect x="8" y="38" width="84" height="30" rx="9" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.6" strokeOpacity="0.65" />
+          <path d="M12 44 L26 44 L18 64 L12 64 Z" fill={color} fillOpacity="0.22" />
+          <circle cx="34" cy="53" r="8.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="56" cy="53" r="8.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="78" cy="53" r="8.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="34" cy="53" r="2.2" fill={`url(#${uid}-glow)`} />
+          <circle cx="56" cy="53" r="2.6" fill={`url(#${uid}-glow)`} />
+          <circle cx="78" cy="53" r="2.2" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+
+    // ---- Intel Arc: smaller budget-tier shroud with hexagonal fan hubs,
+    // reading as a distinct, more compact card family ----
+    case "comp-arc_a380":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="22" y="38" width="56" height="26" rx="7" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.55" />
+          <rect x="26" y="42" width="48" height="3" rx="1.5" fill={color} fillOpacity="0.3" />
+          <polygon points="50,45 58,49.5 58,58.5 50,63 42,58.5 42,49.5" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.3" strokeOpacity="0.75" />
+          <circle cx="50" cy="54" r="2.6" fill={`url(#${uid}-glow)`} />
+        </svg>
+      );
+    case "comp-arc_b580":
+      return (
+        <svg viewBox="0 0 100 100" {...s}>
+          <GlyphDefs uid={uid} color={color} />
+          <rect x="10" y="22" width="12" height="12" rx="2" fill={`url(#${uid}-side)`} stroke={color} strokeOpacity="0.4" strokeWidth="1.1" />
+          <rect x="14" y="36" width="72" height="30" rx="8" fill={`url(#${uid}-front)`} stroke={color} strokeWidth="1.4" strokeOpacity="0.55" />
+          <rect x="18" y="40" width="64" height="3" rx="1.5" fill={color} fillOpacity="0.3" />
+          <polygon points="38,44 45,48 45,56 38,60 31,56 31,48" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.75" />
+          <polygon points="62,44 69,48 69,56 62,60 55,56 55,48" fill={`url(#${uid}-fan)`} stroke={color} strokeWidth="1.2" strokeOpacity="0.75" />
+          <circle cx="38" cy="52" r="2.3" fill={`url(#${uid}-glow)`} />
+          <circle cx="62" cy="52" r="2.3" fill={`url(#${uid}-glow)`} />
         </svg>
       );
 
