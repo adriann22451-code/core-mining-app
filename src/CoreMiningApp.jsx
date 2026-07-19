@@ -259,13 +259,26 @@ const MATERIAL_CATALOG = [
 // one-time CORE equivalent). `metric` is looked up on the same live
 // `metrics` object ACHIEVEMENTS reads from — see metrics below for the 3
 // extra fields (level, invitedCount, poolJoined) added just for these.
+//
+// Rebalanced (v2): targets raised and per-quest payouts trimmed — the
+// original pass let a player clear "own 2 rigs" and "join a pool" in the
+// first few minutes and walk away with enough materials for a free craft,
+// which made the whole Craft tab feel like a non-choice. Now each quest
+// takes real playtime/spend to clear, payouts are just enough to nudge a
+// craft along (not fund one outright), and 3 new higher-tier quests
+// (q_full_rig, q_core_hoarder, q_daily_grinder) keep material income
+// trickling in through the mid/late game instead of drying up after the
+// original 6 are cleared once.
 const QUESTS = [
-  { key: "q_rig_rookie", label: "Rig Rookie", desc: "Own at least 2 rigs.", metric: "rigCount", target: 2, materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }], xp: 40 },
-  { key: "q_wrench_time", label: "Wrench Time", desc: "Repair a rig 5 times.", metric: "repairsCount", target: 5, materials: [{ key: "copper_heatsink", qty: 2 }, { key: "thermal_paste", qty: 3 }], xp: 80 },
-  { key: "q_power_climber", label: "Power Climber", desc: "Reach 100 TH/s total mining power.", metric: "miningPower", target: 100, materials: [{ key: "vram_chip", qty: 3 }, { key: "cooling_fan", qty: 2 }], xp: 120 },
-  { key: "q_network_node", label: "Network Node", desc: "Join a mining pool.", metric: "poolJoined", target: 1, materials: [{ key: "asic_chip", qty: 1 }, { key: "power_connector", qty: 2 }], xp: 100 },
-  { key: "q_squad_up", label: "Squad Up", desc: "Invite 5 friends to CORE.", metric: "invitedCount", target: 5, materials: [{ key: "pcb_board", qty: 3 }, { key: "silicon_die", qty: 3 }], xp: 100 },
-  { key: "q_level_grinder", label: "Level Grinder", desc: "Reach account level 10.", metric: "level", target: 10, materials: [{ key: "vram_chip", qty: 2 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }], xp: 200 },
+  { key: "q_rig_rookie", label: "Rig Rookie", desc: "Own at least 3 rigs.", metric: "rigCount", target: 3, materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }], xp: 40 },
+  { key: "q_wrench_time", label: "Wrench Time", desc: "Repair a rig 15 times.", metric: "repairsCount", target: 15, materials: [{ key: "copper_heatsink", qty: 1 }, { key: "thermal_paste", qty: 2 }], xp: 100 },
+  { key: "q_power_climber", label: "Power Climber", desc: "Reach 400 TH/s total mining power.", metric: "miningPower", target: 400, materials: [{ key: "vram_chip", qty: 2 }, { key: "cooling_fan", qty: 1 }], xp: 160 },
+  { key: "q_network_node", label: "Network Node", desc: "Join a mining pool.", metric: "poolJoined", target: 1, materials: [{ key: "power_connector", qty: 1 }], xp: 60 },
+  { key: "q_squad_up", label: "Squad Up", desc: "Invite 8 friends to CORE.", metric: "invitedCount", target: 8, materials: [{ key: "pcb_board", qty: 2 }, { key: "silicon_die", qty: 2 }], xp: 130 },
+  { key: "q_level_grinder", label: "Level Grinder", desc: "Reach account level 18.", metric: "level", target: 18, materials: [{ key: "vram_chip", qty: 2 }, { key: "copper_heatsink", qty: 1 }, { key: "asic_chip", qty: 1 }], xp: 260 },
+  { key: "q_full_rig", label: "Fully Loaded", desc: "Fill every slot on one rig with components.", metric: "maxFillRatio", target: 1, materials: [{ key: "pcb_board", qty: 1 }, { key: "cooling_fan", qty: 1 }, { key: "thermal_paste", qty: 1 }], xp: 90 },
+  { key: "q_core_hoarder", label: "Core Hoarder", desc: "Earn 4,000 CORE lifetime.", metric: "totalEarned", target: 4000, materials: [{ key: "silicon_die", qty: 2 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], xp: 150 },
+  { key: "q_daily_grinder", label: "Daily Grinder", desc: "Reach a 7-day login streak.", metric: "dailyStreak", target: 7, materials: [{ key: "copper_heatsink", qty: 1 }, { key: "asic_chip", qty: 1 }, { key: "thermal_paste", qty: 1 }], xp: 180 },
 ];
 
 // Craft a real COMPONENT_CATALOG entry from materials + a CORE fee. Priced
@@ -275,11 +288,11 @@ const RECIPES = [
   { key: "craft_rtx5060", outputKey: "rtx5060", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "cooling_fan", qty: 1 }], core: 240 },
   { key: "craft_rtx5080", outputKey: "rtx5080", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }], core: 675 },
   { key: "craft_rtx4090", outputKey: "rtx4090", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }], core: 975 },
-  { key: "craft_rtx5090", outputKey: "rtx5090", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }], core: 1175 },
+  { key: "craft_rtx5090", outputKey: "rtx5090", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }], core: 1175 },
   { key: "craft_rx7600", outputKey: "rx7600", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], core: 215 },
   { key: "craft_rx7800xt", outputKey: "rx7800xt", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }], core: 610 },
   { key: "craft_rx7900xtx", outputKey: "rx7900xtx", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }], core: 890 },
-  { key: "craft_rx9070xt", outputKey: "rx9070xt", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }], core: 1075 },
+  { key: "craft_rx9070xt", outputKey: "rx9070xt", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }], core: 1075 },
   { key: "craft_arc_a380", outputKey: "arc_a380", materials: [{ key: "silicon_die", qty: 1 }, { key: "pcb_board", qty: 1 }, { key: "cooling_fan", qty: 1 }], core: 75 },
   { key: "craft_arc_b580", outputKey: "arc_b580", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], core: 310 },
 ];
@@ -657,6 +670,53 @@ function GlowCard({ children, className = "", accent = C.cyan, style = {}, brack
       {brackets && <CornerBrackets accent={accent} />}
       {children}
     </div>
+  );
+}
+
+// Small pill used for compact spec/status readouts in shop-style rows —
+// keeps every card's detail line to one consistent height/shape instead of
+// stacked paragraphs of different sizes and colors.
+function Chip({ children, color = "#8FA3B8", bg }) {
+  return (
+    <span
+      className="inline-flex items-center text-[9px] font-bold px-1.5 py-[3px] rounded-full whitespace-nowrap leading-none"
+      style={{ background: bg ?? `${color}17`, color }}
+    >
+      {children}
+    </span>
+  );
+}
+
+// One row in a shop-style list (Rigs/Components/Boosters/Packs/Marketplace).
+// Fixed structure — icon, 2-line info block, price, action — so every card
+// in every catalog reads at the same height and rhythm instead of each
+// section stacking its own ad-hoc pile of text lines.
+function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, priceNote, action }) {
+  return (
+    <GlowCard accent={accent} className="p-2.5 flex items-center gap-2.5">
+      {icon}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p className="text-white text-[13px] font-bold truncate">{title}</p>
+          {rarityLabel && (
+            <span className="text-[9px] font-bold shrink-0" style={{ color: accent }}>
+              {rarityLabel}
+            </span>
+          )}
+        </div>
+        {badges && badges.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">{badges}</div>
+        )}
+        {chips && chips.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">{chips}</div>
+        )}
+        <p className="text-white text-xs font-bold tabular-nums mt-1.5">
+          {price}
+          {priceNote && <span className="text-[9px] text-slate-500 font-normal"> {priceNote}</span>}
+        </p>
+      </div>
+      <div className="shrink-0 flex flex-col items-end gap-1">{action}</div>
+    </GlowCard>
   );
 }
 
@@ -1159,61 +1219,78 @@ function RigDevice({ rig }) {
         className="absolute inset-0"
         style={{ background: `radial-gradient(circle at 50% 78%, ${glowColor}${filled.length ? "33" : "1A"}, transparent 60%)` }}
       />
+      {/* Outer wrapper handles the up/down hover-float; inner wrapper spins
+          independently so the two motions don't fight over `transform`. */}
       <div
         style={{
           position: "relative",
           width: "62%",
           aspectRatio: "1/0.72",
-          transformStyle: "preserve-3d",
-          transform: "rotateX(38deg) rotateZ(-32deg)",
-          animation: filled.length ? "core-float 4.5s ease-in-out infinite" : "none",
+          animation: `core-hover ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
         }}
       >
-        <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: "visible" }}>
-          <defs>
-            <linearGradient id={`${uid}-top`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#3A4A66" />
-              <stop offset="100%" stopColor="#1C2740" />
-            </linearGradient>
-            <linearGradient id={`${uid}-front`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#141D33" />
-              <stop offset="100%" stopColor="#0A0F1E" />
-            </linearGradient>
-            <linearGradient id={`${uid}-side`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#0A0F1C" />
-              <stop offset="100%" stopColor="#050810" />
-            </linearGradient>
-          </defs>
-          {/* side face */}
-          <polygon points="50,46 85,28 85,68 50,86" fill={`url(#${uid}-side)`} stroke={glowColor} strokeOpacity="0.3" strokeWidth="1.5" />
-          {/* front face */}
-          <polygon points="15,28 50,46 50,86 15,68" fill={`url(#${uid}-front)`} stroke={glowColor} strokeOpacity="0.4" strokeWidth="1.5" />
-          {/* top face */}
-          <polygon points="50,10 85,28 50,46 15,28" fill={`url(#${uid}-top)`} stroke={glowColor} strokeOpacity="0.55" strokeWidth="1.5" />
-          {/* slot cells on the front face, one per rig component slot */}
-          {cellPositions.map(([cx, cy], i) => {
-            const slot = slots[i];
-            const comp = slot ? COMPONENT_CATALOG.find((c) => c.key === slot.key) : null;
-            const cellColor = comp ? RARITY_STYLE[comp.rarity].color : "#2A3550";
-            return (
-              <rect
-                key={i}
-                x={cx - 6}
-                y={cy - 5}
-                width="12"
-                height="10"
-                rx="2.5"
-                fill={comp ? `${cellColor}33` : "rgba(255,255,255,0.03)"}
-                stroke={cellColor}
-                strokeWidth={comp ? 1.4 : 1}
-                strokeOpacity={comp ? 0.9 : 0.35}
-                style={comp ? { filter: `drop-shadow(0 0 4px ${cellColor}AA)` } : undefined}
-              />
-            );
-          })}
-          {/* status LED on the top face */}
-          <circle cx="50" cy="24" r="2.6" fill={filled.length ? glowColor : "#3A4560"} />
-        </svg>
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            transformStyle: "preserve-3d",
+            transformOrigin: "50% 50%",
+            animation: `core-turntable ${filled.length ? "9s" : "16s"} linear infinite`,
+          }}
+        >
+          <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: "visible" }}>
+            <defs>
+              <linearGradient id={`${uid}-top`} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#3A4A66" />
+                <stop offset="100%" stopColor="#1C2740" />
+              </linearGradient>
+              <linearGradient id={`${uid}-front`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#141D33" />
+                <stop offset="100%" stopColor="#0A0F1E" />
+              </linearGradient>
+              <linearGradient id={`${uid}-side`} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#0A0F1C" />
+                <stop offset="100%" stopColor="#050810" />
+              </linearGradient>
+            </defs>
+            {/* side face */}
+            <polygon points="50,46 85,28 85,68 50,86" fill={`url(#${uid}-side)`} stroke={glowColor} strokeOpacity="0.3" strokeWidth="1.5" />
+            {/* front face */}
+            <polygon points="15,28 50,46 50,86 15,68" fill={`url(#${uid}-front)`} stroke={glowColor} strokeOpacity="0.4" strokeWidth="1.5" />
+            {/* top face */}
+            <polygon points="50,10 85,28 50,46 15,28" fill={`url(#${uid}-top)`} stroke={glowColor} strokeOpacity="0.55" strokeWidth="1.5" />
+            {/* slot cells on the front face, one per rig component slot */}
+            {cellPositions.map(([cx, cy], i) => {
+              const slot = slots[i];
+              const comp = slot ? COMPONENT_CATALOG.find((c) => c.key === slot.key) : null;
+              const cellColor = comp ? RARITY_STYLE[comp.rarity].color : "#2A3550";
+              return (
+                <rect
+                  key={i}
+                  x={cx - 6}
+                  y={cy - 5}
+                  width="12"
+                  height="10"
+                  rx="2.5"
+                  fill={comp ? `${cellColor}33` : "rgba(255,255,255,0.03)"}
+                  stroke={cellColor}
+                  strokeWidth={comp ? 1.4 : 1}
+                  strokeOpacity={comp ? 0.9 : 0.35}
+                  style={comp ? { filter: `drop-shadow(0 0 4px ${cellColor}AA)` } : undefined}
+                />
+              );
+            })}
+            {/* status LED on the top face */}
+            <circle
+              cx="50"
+              cy="24"
+              r="2.6"
+              fill={filled.length ? glowColor : "#3A4560"}
+              style={filled.length ? { animation: "core-led-pulse 1.6s ease-in-out infinite" } : undefined}
+            />
+          </svg>
+        </div>
       </div>
       <div className="absolute top-2.5 left-4 text-[10px] font-extrabold tracking-[0.2em] text-white/60">
         CORE
@@ -1262,7 +1339,10 @@ function RigHero({ rig }) {
         src={photo}
         alt={rig.name}
         className="absolute inset-0 w-full h-full object-contain p-3"
-        style={{ filter: `drop-shadow(0 8px 20px rgba(0,0,0,0.55)) drop-shadow(0 0 18px ${rar.color}33)` }}
+        style={{
+          filter: `drop-shadow(0 8px 20px rgba(0,0,0,0.55)) drop-shadow(0 0 18px ${rar.color}33)`,
+          animation: "core-hover 3.6s ease-in-out infinite",
+        }}
       />
       {/* subtle scanline sweep across the hero for a "live feed" feel */}
       <div
@@ -2913,6 +2993,18 @@ export default function CoreMiningApp() {
           0%, 100% { transform: rotateX(38deg) rotateZ(-32deg) translateY(0px); }
           50% { transform: rotateX(38deg) rotateZ(-32deg) translateY(-8px); }
         }
+        @keyframes core-hover {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes core-turntable {
+          0% { transform: rotateX(38deg) rotateZ(-32deg); }
+          100% { transform: rotateX(38deg) rotateZ(328deg); }
+        }
+        @keyframes core-led-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.45; }
+        }
       `}</style>
 
       {/* Ambient scanline sweeping down the whole screen */}
@@ -3618,40 +3710,32 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const atCap = ownedRigCount >= MAX_RIGS;
               const canAfford = balance >= rig.baseCost && !atCap;
               return (
-                <GlowCard key={rig.key} accent={rar.color} className="p-3 flex items-center gap-3">
-                  <RigIcon rigKey={rig.key} rarity={rig.rarity} size={44} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-sm font-bold">{rig.name}</p>
-                      <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
-                      {rig.brand && (
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#8FA3B8" }}>
-                          {rig.brand}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-slate-500 leading-snug">{rig.desc}</p>
-                    <p className="text-[11px]" style={{ color: C.cyan }}>
-                      {fmt(rig.basePower)} TH/s · <span style={{ color: C.purple }}>{SLOT_CAPACITY[rig.rarity]} component slots</span>
-                    </p>
-                    <p className="text-[10px] flex items-center gap-1" style={{ color: C.orange }}>
-                      <Zap size={10} /> {rig.kwh} kWh/hr power draw
-                    </p>
-                    <p className="text-white text-xs font-bold tabular-nums mt-0.5">
-                      {fmt(rig.baseCost, 0)} <span style={{ color: C.cyan }}>CORE</span>
-                    </p>
-                  </div>
-                  <FuturisticButton
-                    onClick={() => onBuy(rig)}
-                    disabled={!canAfford}
-                    accent={rar.color}
-                    accent2={C.blue}
-                    full={false}
-                    size="sm"
-                  >
-                    {atCap ? `${MAX_RIGS}/${MAX_RIGS}` : "Buy"}
-                  </FuturisticButton>
-                </GlowCard>
+                <ShopRow
+                  key={rig.key}
+                  accent={rar.color}
+                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={44} />}
+                  title={rig.name}
+                  rarityLabel={rar.label}
+                  badges={rig.brand ? [<Chip key="brand">{rig.brand}</Chip>] : null}
+                  chips={[
+                    <Chip key="power" color={C.cyan}>{fmt(rig.basePower)} TH/s</Chip>,
+                    <Chip key="slots" color={C.purple}>{SLOT_CAPACITY[rig.rarity]} slots</Chip>,
+                    <Chip key="kwh" color={C.orange}>{rig.kwh} kWh/hr</Chip>,
+                  ]}
+                  price={<>{fmt(rig.baseCost, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+                  action={
+                    <FuturisticButton
+                      onClick={() => onBuy(rig)}
+                      disabled={!canAfford}
+                      accent={rar.color}
+                      accent2={C.blue}
+                      full={false}
+                      size="sm"
+                    >
+                      {atCap ? `${MAX_RIGS}/${MAX_RIGS}` : "Buy"}
+                    </FuturisticButton>
+                  }
+                />
               );
             })
         ) : filter === "Components" ? (
@@ -3662,44 +3746,35 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const owned = (componentInventory[comp.key] || []).length;
               const canAfford = balance >= comp.price;
               return (
-                <GlowCard key={comp.key} accent={rar.color} className="p-3 flex items-center gap-3">
-                  <ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-sm font-bold">{comp.name}</p>
-                      <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
-                      {comp.brand && (
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#8FA3B8" }}>
-                          {comp.brand}
-                        </span>
-                      )}
-                      {owned > 0 && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${rar.color}22`, color: rar.color }}>
-                          owned x{owned}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-slate-500">
-                      {comp.tflops} TFLOPS · {comp.vram}
-                    </p>
-                    <p className="text-[11px]" style={{ color: C.green }}>
-                      +{comp.boostPct}% boost · +{comp.power} TH/s
-                    </p>
-                    <p className="text-white text-xs font-bold tabular-nums mt-0.5">
-                      {fmt(comp.price, 0)} <span style={{ color: C.cyan }}>CORE</span>
-                    </p>
-                  </div>
-                  <FuturisticButton
-                    onClick={() => onBuyComponent(comp)}
-                    disabled={!canAfford}
-                    accent={rar.color}
-                    accent2={C.blue}
-                    full={false}
-                    size="sm"
-                  >
-                    Buy
-                  </FuturisticButton>
-                </GlowCard>
+                <ShopRow
+                  key={comp.key}
+                  accent={rar.color}
+                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />}
+                  title={comp.name}
+                  rarityLabel={rar.label}
+                  badges={[
+                    comp.brand && <Chip key="brand">{comp.brand}</Chip>,
+                    owned > 0 && <Chip key="owned" color={rar.color}>owned x{owned}</Chip>,
+                  ].filter(Boolean)}
+                  chips={[
+                    <Chip key="tflops">{comp.tflops} TFLOPS · {comp.vram}</Chip>,
+                    <Chip key="boost" color={C.green}>+{comp.boostPct}% boost</Chip>,
+                    <Chip key="power" color={C.cyan}>+{comp.power} TH/s</Chip>,
+                  ]}
+                  price={<>{fmt(comp.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+                  action={
+                    <FuturisticButton
+                      onClick={() => onBuyComponent(comp)}
+                      disabled={!canAfford}
+                      accent={rar.color}
+                      accent2={C.blue}
+                      full={false}
+                      size="sm"
+                    >
+                      Buy
+                    </FuturisticButton>
+                  }
+                />
               );
             })
         ) : filter === "Craft" ? (
@@ -3711,13 +3786,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => (
-                    <span
-                      key={m.key}
-                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: `${C.purple}18`, color: C.purple }}
-                    >
-                      {m.name} ×{materialInventory[m.key]}
-                    </span>
+                    <Chip key={m.key} color={C.purple}>{m.name} ×{materialInventory[m.key]}</Chip>
                   ))}
                 </div>
               )}
@@ -3731,61 +3800,49 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const hasMaterials = recipe.materials.every((m) => (materialInventory[m.key] || 0) >= m.qty);
               const canAfford = balance >= recipe.core && hasMaterials;
               return (
-                <GlowCard key={recipe.key} accent={rar.color} className="p-3 flex items-center gap-3">
-                  <ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-sm font-bold">{comp.name}</p>
-                      <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
-                      {owned > 0 && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${rar.color}22`, color: rar.color }}>
-                          owned x{owned}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1 mb-1">
-                      {recipe.materials.map((m) => {
-                        const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
-                        const have = materialInventory[m.key] || 0;
-                        const enough = have >= m.qty;
-                        return (
-                          <span
-                            key={m.key}
-                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                            style={{ background: enough ? `${C.green}18` : `${C.orange}18`, color: enough ? C.green : C.orange }}
-                          >
-                            {m.qty}× {mat?.name ?? m.key} ({have})
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <p className="text-white text-xs font-bold tabular-nums">
-                      {fmt(recipe.core, 0)} <span style={{ color: C.cyan }}>CORE</span>
-                      <span className="text-[10px] text-slate-500 font-normal"> · shop price {fmt(comp.price, 0)}</span>
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-1.5 items-end">
-                    <FuturisticButton
-                      onClick={() => onCraft(recipe)}
-                      disabled={!canAfford}
-                      accent={rar.color}
-                      accent2={C.blue}
-                      full={false}
-                      size="sm"
-                    >
-                      Craft
-                    </FuturisticButton>
-                    {owned > 0 && (
-                      <button
-                        onClick={() => onRecycle(comp.key)}
-                        className="text-[9px] font-semibold px-2 py-1 rounded-lg"
-                        style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
+                <ShopRow
+                  key={recipe.key}
+                  accent={rar.color}
+                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />}
+                  title={comp.name}
+                  rarityLabel={rar.label}
+                  badges={owned > 0 ? [<Chip key="owned" color={rar.color}>owned x{owned}</Chip>] : null}
+                  chips={recipe.materials.map((m) => {
+                    const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+                    const have = materialInventory[m.key] || 0;
+                    const enough = have >= m.qty;
+                    return (
+                      <Chip key={m.key} color={enough ? C.green : C.orange}>
+                        {m.qty}× {mat?.name ?? m.key} ({have})
+                      </Chip>
+                    );
+                  })}
+                  price={<>{fmt(recipe.core, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+                  priceNote={`· shop price ${fmt(comp.price, 0)}`}
+                  action={
+                    <>
+                      <FuturisticButton
+                        onClick={() => onCraft(recipe)}
+                        disabled={!canAfford}
+                        accent={rar.color}
+                        accent2={C.blue}
+                        full={false}
+                        size="sm"
                       >
-                        Recycle owned
-                      </button>
-                    )}
-                  </div>
-                </GlowCard>
+                        Craft
+                      </FuturisticButton>
+                      {owned > 0 && (
+                        <button
+                          onClick={() => onRecycle(comp.key)}
+                          className="text-[9px] font-semibold px-2 py-1 rounded-lg"
+                          style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
+                        >
+                          Recycle
+                        </button>
+                      )}
+                    </>
+                  }
+                />
               );
             })}
           </>
@@ -3797,32 +3854,30 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const isActive = activeBooster && activeBooster.key === boost.key;
               const canAfford = balance >= boost.price;
               return (
-                <GlowCard key={boost.key} accent={rar.color} className="p-3 flex items-center gap-3">
-                  <BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={44} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-sm font-bold">{boost.name}</p>
-                      <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 leading-snug">{boost.fact}</p>
-                    <p className="text-[11px]" style={{ color: C.green }}>
-                      +{boost.boostPct}% income · {boost.durationHours}h
-                    </p>
-                    <p className="text-white text-xs font-bold tabular-nums mt-0.5">
-                      {fmt(boost.price, 0)} <span style={{ color: C.cyan }}>CORE</span>
-                    </p>
-                  </div>
-                  <FuturisticButton
-                    onClick={() => onBuyBooster(boost)}
-                    disabled={!canAfford}
-                    accent={rar.color}
-                    accent2={C.orange}
-                    full={false}
-                    size="sm"
-                  >
-                    {isActive ? "Extend" : "Activate"}
-                  </FuturisticButton>
-                </GlowCard>
+                <ShopRow
+                  key={boost.key}
+                  accent={rar.color}
+                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={44} />}
+                  title={boost.name}
+                  rarityLabel={rar.label}
+                  chips={[
+                    <Chip key="boost" color={C.green}>+{boost.boostPct}% income</Chip>,
+                    <Chip key="dur" color={C.orange}>{boost.durationHours}h</Chip>,
+                  ]}
+                  price={<>{fmt(boost.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+                  action={
+                    <FuturisticButton
+                      onClick={() => onBuyBooster(boost)}
+                      disabled={!canAfford}
+                      accent={rar.color}
+                      accent2={C.orange}
+                      full={false}
+                      size="sm"
+                    >
+                      {isActive ? "Extend" : "Activate"}
+                    </FuturisticButton>
+                  }
+                />
               );
             })
         ) : filter === "Packs" ? (
@@ -3831,29 +3886,27 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
             const isFull = energy >= MAX_ENERGY_KWH;
             const canAfford = balance >= pack.price;
             return (
-              <GlowCard key={pack.key} accent={rar.color} className="p-3 flex items-center gap-3">
-                <PackIcon packKey={pack.key} rarity={pack.rarity} size={44} />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-white text-sm font-bold">{pack.name}</p>
-                    <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
-                  </div>
-                  <p className="text-[11px]" style={{ color: C.orange }}>+{pack.amount} kWh</p>
-                  <p className="text-white text-xs font-bold tabular-nums mt-0.5">
-                    {fmt(pack.price, 0)} <span style={{ color: C.cyan }}>CORE</span>
-                  </p>
-                </div>
-                <FuturisticButton
-                  onClick={() => onBuyEnergyPack(pack)}
-                  disabled={isFull || !canAfford}
-                  accent={C.orange}
-                  accent2={rar.color}
-                  full={false}
-                  size="sm"
-                >
-                  {isFull ? "Full" : "Buy"}
-                </FuturisticButton>
-              </GlowCard>
+              <ShopRow
+                key={pack.key}
+                accent={rar.color}
+                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={44} />}
+                title={pack.name}
+                rarityLabel={rar.label}
+                chips={[<Chip key="amount" color={C.orange}>+{pack.amount} kWh</Chip>]}
+                price={<>{fmt(pack.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+                action={
+                  <FuturisticButton
+                    onClick={() => onBuyEnergyPack(pack)}
+                    disabled={isFull || !canAfford}
+                    accent={C.orange}
+                    accent2={rar.color}
+                    full={false}
+                    size="sm"
+                  >
+                    {isFull ? "Full" : "Buy"}
+                  </FuturisticButton>
+                }
+              />
             );
           })
         ) : (
@@ -3978,47 +4031,37 @@ function MarketplaceTab({ balance, listings, onBuyListing, onCancelListing, onOp
           const isYou = l.sellerId === "you";
           const canAfford = balance >= l.price;
           return (
-            <GlowCard key={l.id} accent={rar.color} className="p-3 flex items-center gap-3">
-              {l.itemType === "rig" ? (
-                <RigIcon rigKey={l.item.key} rarity={l.item.rarity} size={44} />
-              ) : (
-                <ComponentIcon compKey={l.item.key} rarity={l.item.rarity} size={44} />
-              )}
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-white text-sm font-bold">{l.item.name}</p>
-                  <span className="text-[10px]" style={{ color: rar.color }}>{rar.label}</span>
-                  {isYou && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${C.cyan}22`, color: C.cyan }}>
-                      your listing
-                    </span>
-                  )}
-                </div>
-                {l.itemType === "rig" && (
-                  <p className="text-[11px]" style={{ color: C.cyan }}>
-                    Lv.{l.item.level} · {l.item.durability}% durability
-                  </p>
-                )}
-                {l.itemType === "component" && (
-                  <p className="text-[11px]" style={{ color: C.cyan }}>
-                    {l.item.durability ?? 100}% durability
-                  </p>
-                )}
-                <p className="text-[10px] text-slate-500">Seller: {l.sellerName}</p>
-                <p className="text-white text-xs font-bold tabular-nums mt-0.5">
-                  {fmt(l.price, 0)} <span style={{ color: C.cyan }}>CORE</span>
-                </p>
-              </div>
-              {isYou ? (
-                <FuturisticButton onClick={() => onCancelListing(l.id)} accent={C.orange} accent2="#FF6B6B" full={false} size="sm">
-                  Cancel
-                </FuturisticButton>
-              ) : (
-                <FuturisticButton onClick={() => onBuyListing(l.id)} disabled={!canAfford} accent={rar.color} accent2={C.blue} full={false} size="sm">
-                  Buy
-                </FuturisticButton>
-              )}
-            </GlowCard>
+            <ShopRow
+              key={l.id}
+              accent={rar.color}
+              icon={
+                l.itemType === "rig" ? (
+                  <RigIcon rigKey={l.item.key} rarity={l.item.rarity} size={44} />
+                ) : (
+                  <ComponentIcon compKey={l.item.key} rarity={l.item.rarity} size={44} />
+                )
+              }
+              title={l.item.name}
+              rarityLabel={rar.label}
+              badges={isYou ? [<Chip key="you" color={C.cyan}>your listing</Chip>] : null}
+              chips={[
+                l.itemType === "rig" && <Chip key="lvl" color={C.cyan}>Lv.{l.item.level}</Chip>,
+                <Chip key="dur" color={C.cyan}>{l.item.durability ?? 100}% durability</Chip>,
+                <Chip key="seller">Seller: {l.sellerName}</Chip>,
+              ].filter(Boolean)}
+              price={<>{fmt(l.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+              action={
+                isYou ? (
+                  <FuturisticButton onClick={() => onCancelListing(l.id)} accent={C.orange} accent2="#FF6B6B" full={false} size="sm">
+                    Cancel
+                  </FuturisticButton>
+                ) : (
+                  <FuturisticButton onClick={() => onBuyListing(l.id)} disabled={!canAfford} accent={rar.color} accent2={C.blue} full={false} size="sm">
+                    Buy
+                  </FuturisticButton>
+                )
+              }
+            />
           );
         })}
       </div>
@@ -4669,7 +4712,7 @@ function QuestsModal({ onClose, metrics, claimed, onClaim }) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-slate-400 tabular-nums">
-                      {progress}/{q.target}
+                      {q.target <= 1 ? `${Math.round(pct)}%` : `${fmt(progress, 0)}/${fmt(q.target, 0)}`}
                     </span>
                     {isClaimed ? (
                       <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: C.green }}>
