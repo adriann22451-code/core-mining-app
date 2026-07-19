@@ -1543,7 +1543,7 @@ function MaterialIcon({ materialKey, rarity = "common", size = 40 }) {
 // installed components — empty slots stay dark, filled slots light up in
 // their component's rarity color, and glow intensity scales with how many
 // slots are filled and how rare they are.
-function RigDevice({ rig }) {
+function RigDevice({ rig, fill = false }) {
   const slots = rig?.slots || [];
   const slotCount = slots.length || 4;
   const filled = slots.filter(Boolean);
@@ -1574,7 +1574,7 @@ function RigDevice({ rig }) {
     <div
       className="relative w-full overflow-hidden rounded-xl flex items-center justify-center"
       style={{
-        aspectRatio: "16/9",
+        ...(fill ? { height: "100%" } : { aspectRatio: "16/9" }),
         background: "linear-gradient(160deg, #101A2C, #05070E)",
         border: `1px solid ${glowColor}33`,
         boxShadow: filled.length ? `0 0 ${glowBlur}px -12px ${glowColor}88 inset` : undefined,
@@ -1681,17 +1681,17 @@ function RigDevice({ rig }) {
 
 // Home tab hero: shows a real photo of the player's best owned rig (falls
 // back to the CSS chassis illustration if no rig is owned / has no image).
-function RigHero({ rig }) {
+function RigHero({ rig, fill = false }) {
   const photo = rig ? ASSET_URLS.rigs[rig.key] : null;
   const rar = rig ? RARITY_STYLE[rig.rarity] : RARITY_STYLE.common;
 
-  if (!photo) return <RigDevice rig={rig} />;
+  if (!photo) return <RigDevice rig={rig} fill={fill} />;
 
   return (
     <div
       className="relative w-full overflow-hidden rounded-xl"
       style={{
-        aspectRatio: "16/9",
+        ...(fill ? { height: "100%" } : { aspectRatio: "16/9" }),
         border: `1px solid ${rar.color}44`,
         boxShadow: `0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 30px -10px ${rar.color}66`,
       }}
@@ -3766,15 +3766,34 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
   // Hours left before energy hits 0 at the current drain rate — this is the
   // number a player actually needs to decide "should I buy a refill now?".
   const energyHoursLeft = energyDrainPerHour > 0 ? energy / energyDrainPerHour : null;
+  // Any live boost gets folded into one small badge stack next to the
+  // balance instead of full-width banners — keeps the header compact so the
+  // rig hero below can claim most of the screen.
+  const boosts = [
+    newMinerBoostActive && {
+      key: "newminer",
+      color: C.green,
+      icon: Sparkles,
+      text: `+${NEW_MINER_BOOST_PCT}% · ${newMinerBoostHoursLeft}h`,
+    },
+    activeBooster && {
+      key: "booster",
+      color: C.orange,
+      icon: Zap,
+      text: `+${activeBooster.boostPct}% · ${boosterMinsLeft}m`,
+    },
+  ].filter(Boolean);
+
   return (
-    <div>
-      <div className="flex items-center justify-between px-4 pt-4">
+    <div className="h-full flex flex-col px-4 pt-3">
+      {/* Header */}
+      <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <CoreMark size={26} />
+          <CoreMark size={24} />
           <span className="text-white font-extrabold tracking-widest text-sm">CORE</span>
         </div>
         <div className="flex items-center gap-3 text-slate-400">
-          <Bell size={18} />
+          <Bell size={17} />
           <button onClick={onOpenProfile} aria-label="Open profile">
             <div
               className="w-7 h-7 rounded-full border overflow-hidden flex items-center justify-center"
@@ -3790,213 +3809,113 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         </div>
       </div>
 
-      {newMinerBoostActive && (
-        <div className="px-4 mt-3">
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold"
-            style={{ background: `${C.green}15`, border: `1px solid ${C.green}55`, color: C.green }}
-          >
-            <Sparkles size={13} />
-            New Miner Boost active · +{NEW_MINER_BOOST_PCT}% income · {newMinerBoostHoursLeft}h left
+      {/* Balance + boost badges */}
+      <div className="flex items-end justify-between shrink-0 mt-2.5">
+        <div>
+          <p className="text-slate-400 text-[10px] mb-0.5 tracking-wide">TOTAL BALANCE</p>
+          <div className="flex items-end gap-1.5">
+            <span className="text-white text-[26px] leading-none font-extrabold tabular-nums">{fmt(balance)}</span>
+            <span className="text-xs font-bold mb-0.5" style={{ color: C.cyan }}>CORE</span>
           </div>
+          <p className="text-slate-500 text-[10px] mt-0.5">≈ ${fmt(balance * 504.6, 2)} USD</p>
         </div>
-      )}
-
-      {activeBooster && (
-        <div className="px-4 mt-3">
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold"
-            style={{ background: `${C.orange}15`, border: `1px solid ${C.orange}55`, color: C.orange }}
-          >
-            <Zap size={13} />
-            {activeBooster.name} active · +{activeBooster.boostPct}% income · {boosterMinsLeft}m left
+        {boosts.length > 0 && (
+          <div className="flex flex-col gap-1 items-end">
+            {boosts.map((b) => (
+              <span
+                key={b.key}
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap"
+                style={{ background: `${b.color}15`, border: `1px solid ${b.color}55`, color: b.color }}
+              >
+                <b.icon size={11} /> {b.text}
+              </span>
+            ))}
           </div>
-        </div>
-      )}
-
-      <div className="px-4 mt-5">
-        <p className="text-slate-400 text-xs mb-1 tracking-wide">TOTAL BALANCE</p>
-        <div className="flex items-end gap-2">
-          <span className="text-white text-3xl font-extrabold tabular-nums">{fmt(balance)}</span>
-          <span className="text-sm font-bold mb-1" style={{ color: C.cyan }}>CORE</span>
-        </div>
-        <p className="text-slate-500 text-xs mt-0.5">≈ ${fmt(balance * 504.6, 2)} USD</p>
+        )}
       </div>
 
-      {/* Rig visual */}
-      <div className="px-4 mt-6">
-        <GlowCard accent={topRig ? RARITY_STYLE[topRig.rarity].color : C.blue} brackets className="p-3">
-          <RigHero rig={topRig} />
+      {/* Rig visual — the hero, gets whatever space is left */}
+      <div className="flex-1 min-h-0 mt-3">
+        <GlowCard
+          accent={topRig ? RARITY_STYLE[topRig.rarity].color : C.blue}
+          brackets
+          className="p-2 h-full"
+        >
+          <RigHero rig={topRig} fill />
         </GlowCard>
       </div>
 
-      <div className="px-4 mt-4 grid grid-cols-2 gap-3">
-        <GlowCard accent={C.cyan} className="p-3">
-          <div className="flex items-center gap-2 text-slate-400 text-[11px] mb-1">
-            <Gauge size={13} /> Mining Power
+      {/* Mining power / income */}
+      <div className="shrink-0 mt-2.5 grid grid-cols-2 gap-2">
+        <GlowCard accent={C.cyan} className="px-3 py-2">
+          <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
+            <Gauge size={12} /> Mining Power
           </div>
           <p className="text-white font-bold text-sm tabular-nums">{fmt(miningPower)} TH/s</p>
         </GlowCard>
-        <GlowCard accent={C.green} className="p-3">
-          <div className="flex items-center gap-2 text-slate-400 text-[11px] mb-1">
-            <Coins size={13} /> Income / Hour
+        <GlowCard accent={C.green} className="px-3 py-2">
+          <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
+            <Coins size={12} /> Income / Hour
           </div>
           <p className="text-white font-bold text-sm tabular-nums">{fmt(incomePerHour)} CORE</p>
         </GlowCard>
       </div>
 
-      <div className="px-4 mt-3">
+      {/* Pool status + network, one tappable strip */}
+      <button className="shrink-0 mt-2 w-full text-left" onClick={onOpenNetwork}>
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-semibold"
-          style={
-            poolInfo
-              ? { background: `${C.purple}15`, border: `1px solid ${C.purple}55`, color: C.purple }
-              : { background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536", color: "#8FA3B8" }
-          }
+          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[10px] font-semibold"
+          style={{
+            background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 100%)",
+            border: `1px solid ${C.blue}33`,
+          }}
         >
-          <Users size={13} />
-          {poolInfo
-            ? `Pool mining · ${poolInfo.name}${poolInfo.isOwner ? " (owner)" : ""} · ${poolInfo.feePct}% fee`
-            : "Solo mining · join a Pool for shared hashrate"}
-        </div>
-      </div>
-
-      <div className="px-4 mt-2">
-        <button className="w-full text-left" onClick={onOpenNetwork}>
-          <div
-            className="relative overflow-hidden rounded-2xl p-4"
-            style={{
-              background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 60%, #060911 100%)",
-              border: `1px solid ${C.blue}33`,
-              boxShadow: `0 16px 34px -18px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)`,
-            }}
-          >
-            {/* faint scanning glow */}
-            <div
-              className="absolute -top-10 -right-10 w-32 h-32 rounded-full pointer-events-none"
-              style={{ background: `radial-gradient(circle, ${C.blue}22, transparent 70%)` }}
+          <span className="flex items-center gap-1.5 text-slate-300 truncate">
+            <Users size={12} color={poolInfo ? C.purple : "#8FA3B8"} />
+            {poolInfo ? `${poolInfo.name} pool · ${poolInfo.feePct}% fee` : "Solo mining"}
+          </span>
+          <span className="flex items-center gap-1.5 shrink-0" style={{ color: C.blue }}>
+            <Database size={11} />
+            Y{schedule.yearNumber} · {schedule.percentMined.toFixed(1)}% mined
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: C.green, boxShadow: `0 0 6px 2px ${C.green}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
             />
+          </span>
+        </div>
+      </button>
 
-            <div className="flex items-center justify-between relative">
-              <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-slate-300">
-                <Database size={13} color={C.blue} /> NETWORK · Year {schedule.yearNumber} halving
-              </span>
-              <span className="flex items-center gap-1 text-[10px] font-extrabold" style={{ color: C.green }}>
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: C.green, boxShadow: `0 0 6px 2px ${C.green}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
-                />
-                LIVE
-              </span>
-            </div>
-
-            {/* supply progress */}
-            <div className="mt-3 relative">
-              <div className="flex items-end justify-between mb-1">
-                <span className="text-white font-extrabold text-base tabular-nums">
-                  {fmt(schedule.totalMined, 0)}
-                </span>
-                <span className="text-slate-500 text-[10px] tabular-nums">
-                  / {fmt(MINING_POOL_SUPPLY, 0)} CORE
-                </span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                <div
-                  className="h-full rounded-full relative"
-                  style={{
-                    width: `${schedule.percentMined}%`,
-                    background: `linear-gradient(90deg, ${C.cyan}, ${C.blue})`,
-                    boxShadow: `0 0 8px 1px ${C.cyan}88`,
-                  }}
-                >
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
-                      width: "40%",
-                      animation: "core-scan 2.4s linear infinite",
-                    }}
-                  />
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1">{schedule.percentMined.toFixed(2)}% mined · {schedule.daysToHalving}d to next halving</p>
-            </div>
-
-            {/* live stat tiles */}
-            <div className="grid grid-cols-2 gap-2 mt-3 relative">
-              <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                  <Users size={12} color={C.green} /> Active Miners
-                </div>
-                <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkActiveMiners, 0)}</p>
-              </div>
-              <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                  <Gauge size={12} color={C.cyan} /> Network Hashrate
-                </div>
-                <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkHashrateTotal, 0)} TH/s</p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end mt-2 relative">
-              <span className="text-[10px] font-semibold" style={{ color: C.blue }}>Full network stats →</span>
-            </div>
-          </div>
-        </button>
-      </div>
-
-      <div className="px-4 mt-3">
-        <GlowCard accent={C.orange} className="p-4">
+      {/* Energy + storage, compact */}
+      <div className="shrink-0 mt-2">
+        <GlowCard accent={C.orange} className="px-3 py-2">
           <StatBar label="ENERGY" value={energy} max={MAX_ENERGY_KWH} color={C.orange} suffix=" kWh" />
-          <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
-            <span className="flex items-center gap-1">
-              <Zap size={10} /> {fmt(energy, 1)} / {MAX_ENERGY_KWH} kWh
-            </span>
-            <span className="tabular-nums">
-              {energyHoursLeft == null
-                ? "not in use (rig off)"
-                : energyHoursLeft >= 1
-                ? `~${fmt(energyHoursLeft, 1)}h left`
-                : `~${fmt(energyHoursLeft * 60, 0)}m left`}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-500 mt-0.5 mb-2">
-            <span>Draining at</span>
-            <span className="tabular-nums">
-              {activeOwnedRigs.length
-                ? `~${fmt(energyDrainPerHour, 1)} kWh/hr · ${activeOwnedRigs.length} rig${activeOwnedRigs.length > 1 ? "s" : ""} active`
-                : "0 kWh/hr · no rigs active"}
-            </span>
-          </div>
-          {energy > 0 && energy <= MAX_ENERGY_KWH * 0.25 && (
-            <p className="text-[11px] mb-1" style={{ color: C.orange }}>
-              Energy running low — refill now in Market → Packs so mining doesn't stop.
-            </p>
-          )}
+          <p className="text-[10px] text-slate-500 -mt-2 mb-2">
+            {energyHoursLeft == null
+              ? "not in use (rig off)"
+              : energyHoursLeft >= 1
+              ? `~${fmt(energyHoursLeft, 1)}h left`
+              : `~${fmt(energyHoursLeft * 60, 0)}m left`}
+            {activeOwnedRigs.length > 0 && ` · ${activeOwnedRigs.length} rig${activeOwnedRigs.length > 1 ? "s" : ""} active`}
+          </p>
           <StatBar label="STORAGE" value={storage} color={C.purple} />
-          <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1 mb-1">
-            <span className="flex items-center gap-1">
-              <Database size={10} /> Unclaimed CORE buffer
-            </span>
-            <span className="tabular-nums">
-              {fmt(pending, 2)} / {fmt(storageCap, 0)} CORE
-            </span>
-          </div>
-          {pending >= storageCap * 0.9 && (
-            <p className="text-[11px] mb-1" style={{ color: C.orange }}>
-              Storage almost full — claim now, excess mining output will be lost.
-            </p>
-          )}
-          {energy <= 0 && (
-            <p className="text-[11px] mt-1" style={{ color: "#FF7A7A" }}>
-              Out of energy — mining paused. Buy a pack in Market → Packs.
+          <p className="text-[10px] text-slate-500 -mt-2">
+            {fmt(pending, 2)} / {fmt(storageCap, 0)} CORE buffer
+          </p>
+          {(energy <= 0 || (energy > 0 && energy <= MAX_ENERGY_KWH * 0.25) || pending >= storageCap * 0.9) && (
+            <p className="text-[10px] mt-1.5" style={{ color: energy <= 0 ? "#FF7A7A" : C.orange }}>
+              {energy <= 0
+                ? "Out of energy — mining paused. Buy a pack in Market → Packs."
+                : pending >= storageCap * 0.9
+                ? "Storage almost full — claim now."
+                : "Energy running low — refill in Market → Packs."}
             </p>
           )}
         </GlowCard>
       </div>
 
-      <div className="px-4 mt-4">
-        <div className="flex items-center justify-between mb-2 px-0.5">
+      {/* Claim */}
+      <div className="shrink-0 mt-2.5 pb-2">
+        <div className="flex items-center justify-between mb-1.5 px-0.5">
           <span className="text-[11px] text-slate-400 tracking-wide">Ready to claim</span>
           <span className="text-sm font-extrabold tabular-nums" style={{ color: C.green }}>
             +{fmt(pending, 4)} CORE
