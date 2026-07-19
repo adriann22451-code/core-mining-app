@@ -38,7 +38,7 @@ const RARITY_STYLE = {
 const TRANSLATIONS = {
   // Navigation
   nav_home: { en: "Home", id: "Beranda", es: "Inicio", pt: "Início", ru: "Главная", zh: "主页" },
-  nav_market: { en: "Market", id: "Pasar", es: "Mercado", pt: "Mercado", ru: "Рынок", zh: "市场" },
+  nav_market: { en: "Shop", id: "Toko", es: "Tienda", pt: "Loja", ru: "Магазин", zh: "商店" },
   nav_inventory: { en: "Inventory", id: "Inventaris", es: "Inventario", pt: "Inventário", ru: "Инвентарь", zh: "库存" },
   nav_upgrade: { en: "Upgrade", id: "Tingkatkan", es: "Mejorar", pt: "Melhorar", ru: "Улучшить", zh: "升级" },
   nav_profile: { en: "Profile", id: "Profil", es: "Perfil", pt: "Perfil", ru: "Профиль", zh: "个人资料" },
@@ -137,7 +137,18 @@ function useTelegram() {
     [tg]
   );
 
-  return { tg, user, isTelegram: !!tg, haptic, hapticNotify };
+  // Raw initData string — sent as-is to our API so the server can verify it
+  // (HMAC) came from Telegram and identify which user it belongs to. Never
+  // trust telegram.initDataUnsafe.user for anything that touches the
+  // database; it's client-supplied and unverified.
+  const initData = tg?.initData || null;
+  // Set only when this session was opened via a referral link
+  // (t.me/<bot>/<app>?startapp=<code>) — used once, on a fresh account, to
+  // report the referral to /api/referral. Also client-supplied/unverified;
+  // the server re-derives the referrer from the code itself.
+  const startParam = tg?.initDataUnsafe?.start_param || null;
+
+  return { tg, user, initData, startParam, isTelegram: !!tg, haptic, hapticNotify };
 }
 
 // Cost efficiency (CORE per TH/s) used to get WORSE at higher tiers
@@ -475,6 +486,13 @@ const MINER_LAUNCH_COUNT = 7;
 const NEW_MINER_BOOST_PCT = 75;
 const NEW_MINER_BOOST_HOURS = 48;
 const WELCOME_GRANT_CORE = 10;
+// The CORE part of the welcome grant is a launch promo, not a permanent
+// feature — only accounts created within WELCOME_PROMO_DAYS of GENESIS_DATE
+// get the free CORE. Everyone after that still gets the energy top-up and
+// a free common-rarity Starter Rig (so a fresh account never stalls), just
+// without the CORE credit.
+const WELCOME_PROMO_DAYS = 30;
+const WELCOME_PROMO_END = GENESIS_DATE + WELCOME_PROMO_DAYS * 24 * 3600 * 1000;
 // Extra reward pools earn for coordinating more members, scaling up to a
 // full 200-member pool. Rewards "many people joining", per the spec.
 const POOL_SYNERGY_MAX_BONUS = 10;
@@ -1432,10 +1450,79 @@ function loadSavedGame() {
 }
 
 // ---------------------------------------------------------------------------
+// BACKEND SYNC (Redis-backed progress + real network stats)
+// ---------------------------------------------------------------------------
+// Thin wrappers around the two API routes. All failures are swallowed and
+// logged only — the app must keep working from localStorage alone if the
+// network/API is unreachable (matches the existing "safe to use outside
+// Telegram" philosophy).
+async function apiLoadPlayer(initData) {
+  try {
+    const res = await fetch(`/api/player?initData=${encodeURIComponent(initData)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.exists ? data.progress : null;
+  } catch (err) {
+    console.warn("apiLoadPlayer failed:", err);
+    return null;
+  }
+}
+
+async function apiSavePlayer(initData, progress, claimedDelta) {
+  try {
+    await fetch("/api/player", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData, progress, claimedDelta }),
+    });
+  } catch (err) {
+    console.warn("apiSavePlayer failed:", err);
+  }
+}
+
+async function apiLoadStats() {
+  try {
+    const res = await fetch("/api/stats");
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.ok ? { activeMiners: data.activeMiners, totalMined: data.totalMined } : null;
+  } catch (err) {
+    console.warn("apiLoadStats failed:", err);
+    return null;
+  }
+}
+
+async function apiLoadReferrals(initData) {
+  try {
+    const res = await fetch(`/api/referral?initData=${encodeURIComponent(initData)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.ok ? data.invitedFriends : null;
+  } catch (err) {
+    console.warn("apiLoadReferrals failed:", err);
+    return null;
+  }
+}
+
+async function apiSubmitReferral(initData, referrerCode) {
+  try {
+    const res = await fetch("/api/referral", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData, referrerCode }),
+    });
+    return res.ok ? await res.json() : null;
+  } catch (err) {
+    console.warn("apiSubmitReferral failed:", err);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // MAIN APP
 // ---------------------------------------------------------------------------
 export default function CoreMiningApp() {
-  const { tg, user, isTelegram, haptic: hapticRaw, hapticNotify: hapticNotifyRaw } = useTelegram();
+  const { tg, user, initData, startParam, isTelegram, haptic: hapticRaw, hapticNotify: hapticNotifyRaw } = useTelegram();
   // Read the saved game once per mount (lazy ref, not re-read every render).
   const savedGameRef = useRef(null);
   if (savedGameRef.current === null) savedGameRef.current = loadSavedGame();
@@ -1592,6 +1679,122 @@ export default function CoreMiningApp() {
     };
   }, []);
 
+  // ---- Backend sync (Redis via /api/player, /api/stats) --------------------
+  // Tracks how much of `totalEarned` has already been reported to the server
+  // so we only ever add each CORE once to the global "Total CORE mined"
+  // counter, even though totalEarned itself is saved in full each time.
+  const lastSyncedTotalEarnedRef = useRef(savedGame.totalEarned ?? 0);
+  const hasLoadedServerProgressRef = useRef(false);
+
+  const applyServerProgress = useCallback((p) => {
+    if (!p) return;
+    if (typeof p.balance === "number") setBalance(p.balance);
+    if (typeof p.pending === "number") setPending(p.pending);
+    if (typeof p.energy === "number") setEnergy(p.energy);
+    if (typeof p.level === "number") setLevel(p.level);
+    if (typeof p.xp === "number") setXp(p.xp);
+    if (typeof p.totalEarned === "number") {
+      setTotalEarned(p.totalEarned);
+      lastSyncedTotalEarnedRef.current = p.totalEarned;
+    }
+    if (Array.isArray(p.owned)) setOwned(p.owned);
+    if (p.componentInventory && typeof p.componentInventory === "object") setComponentInventory(p.componentInventory);
+    if ("featuredRigId" in p) setFeaturedRigId(p.featuredRigId);
+    if ("activeBooster" in p) setActiveBooster(p.activeBooster);
+    if (typeof p.dailyStreak === "number") setDailyStreak(p.dailyStreak);
+    if ("lastClaimDate" in p) setLastClaimDate(p.lastClaimDate);
+    if (typeof p.repairsCount === "number") setRepairsCount(p.repairsCount);
+    if (Array.isArray(p.achievementsClaimed)) setAchievementsClaimed(p.achievementsClaimed);
+    if (p.missionProgress && typeof p.missionProgress === "object") setMissionProgress(p.missionProgress);
+    if (Array.isArray(p.missionClaimed)) setMissionClaimed(p.missionClaimed);
+    // invitedFriends intentionally NOT restored here — it's authoritatively
+    // sourced from /api/referral (server-validated), not the generic
+    // progress blob, so a stale local copy can never clobber it.
+    if (Array.isArray(p.referralMilestonesClaimed)) setReferralMilestonesClaimed(p.referralMilestonesClaimed);
+    if (Array.isArray(p.pools)) setPools(p.pools);
+    if ("joinedPoolId" in p) setJoinedPoolId(p.joinedPoolId);
+    if (Array.isArray(p.listings)) setListings(p.listings);
+    if (typeof p.musicOn === "boolean") setMusicOn(p.musicOn);
+    if (typeof p.sfxOn === "boolean") setSfxOn(p.sfxOn);
+    if (typeof p.vibrationOn === "boolean") setVibrationOn(p.vibrationOn);
+    if (typeof p.notificationsOn === "boolean") setNotificationsOn(p.notificationsOn);
+    if (typeof p.language === "string") setLanguage(p.language);
+    if (typeof p.welcomeGrantClaimed === "boolean") setWelcomeGrantClaimed(p.welcomeGrantClaimed);
+  }, []);
+
+  // Load from the server once, on first mount inside Telegram. The server
+  // copy (if any) wins over whatever's in localStorage on this device, since
+  // it's the cross-device source of truth. If there's no server copy yet
+  // (brand-new player) or the request fails, we just keep using local state.
+  useEffect(() => {
+    if (!isTelegram || !initData || hasLoadedServerProgressRef.current) return;
+    hasLoadedServerProgressRef.current = true;
+    apiLoadPlayer(initData).then((progress) => {
+      if (progress) applyServerProgress(progress);
+    });
+  }, [isTelegram, initData, applyServerProgress]);
+
+  // Push progress to the server on the same cadence as the localStorage
+  // save. claimedDelta is however much totalEarned grew since the last
+  // successful sync — that's what gets added to the real, global
+  // "Total CORE mined" counter (see api/player.js + api/stats.js).
+  useEffect(() => {
+    if (!isTelegram || !initData) return;
+    const sync = () => {
+      const delta = Math.max(0, persistRef.current.totalEarned - lastSyncedTotalEarnedRef.current);
+      apiSavePlayer(initData, persistRef.current, delta);
+      lastSyncedTotalEarnedRef.current = persistRef.current.totalEarned;
+    };
+    const id = setInterval(sync, 5000);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") sync();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("beforeunload", sync);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("beforeunload", sync);
+    };
+  }, [isTelegram, initData]);
+
+  // Real network stats (Active Miners / Total CORE mined), aggregated from
+  // every player's saved progress server-side. Public endpoint — polled
+  // regardless of Telegram/auth state. null while loading; consumers below
+  // fall back to the presentational simulation only until the first
+  // successful response lands.
+  const [serverStats, setServerStats] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const poll = () => apiLoadStats().then((s) => { if (s && !cancelled) setServerStats(s); });
+    poll();
+    const id = setInterval(poll, 25000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  // Referral: if this session was opened via someone's link
+  // (?startapp=CORE<id>), report it once so the server can validate and
+  // credit it (see api/referral.js — same-IP-as-referrer or a reused IP
+  // under that referrer both get rejected there, not here). The server is
+  // idempotent per invitee, so an accidental double-call is harmless.
+  const referralSubmittedRef = useRef(false);
+  useEffect(() => {
+    if (!isTelegram || !initData || !startParam || referralSubmittedRef.current) return;
+    if (startParam === referralCode) return; // opened your own link — ignore
+    referralSubmittedRef.current = true;
+    apiSubmitReferral(initData, startParam);
+  }, [isTelegram, initData, startParam, referralCode]);
+
+  // Load this player's own real, server-validated invited-friends list
+  // (drives the Referral modal + milestone progress). Overrides whatever
+  // was in localStorage, since the server is the source of truth here.
+  useEffect(() => {
+    if (!isTelegram || !initData) return;
+    apiLoadReferrals(initData).then((list) => {
+      if (list) setInvitedFriends(list);
+    });
+  }, [isTelegram, initData]);
+
   const notify = useCallback((msg, type = "success") => {
     setToast({ msg, type });
     hapticNotify(type === "error" ? "error" : "success");
@@ -1599,17 +1802,24 @@ export default function CoreMiningApp() {
     notify._t = setTimeout(() => setToast(null), 2200);
   }, [hapticNotify]);
 
-  // One-time welcome grant for a new account: CORE credit, full energy
-  // top-up, and a free Starter Rig — so the very first session doesn't
-  // stall on an empty energy bar or an empty rig list. The gifted rig is
-  // marked tradeable: false (enforced in listRigForSale + SellItemModal
-  // below) so it can't be instantly flipped on the Marketplace for free
-  // CORE — it has to actually be used to mine. Runs once (guarded by
-  // welcomeGrantClaimed); in production this should also check a persisted
-  // backend flag so returning users never get it twice.
+  // One-time welcome grant for a new account: full energy top-up and a free
+  // Starter Rig always apply, so the very first session never stalls on an
+  // empty energy bar or an empty rig list. The CORE credit on top of that is
+  // a launch promo — only accounts created within WELCOME_PROMO_DAYS of
+  // GENESIS_DATE get it (see WELCOME_PROMO_END above); everyone who joins
+  // after the promo window still gets the energy + rig, just no CORE.
+  // The gifted rig is marked tradeable: false (enforced in listRigForSale +
+  // SellItemModal below) so it can't be instantly flipped on the
+  // Marketplace for free CORE — it has to actually be used to mine. Runs
+  // once (guarded by welcomeGrantClaimed); in production this should also
+  // check a persisted backend flag so returning users never get it twice.
   useEffect(() => {
     if (welcomeGrantClaimed) return;
-    setBalance((b) => b + WELCOME_GRANT_CORE);
+    const promoActive = Date.now() < WELCOME_PROMO_END;
+    if (promoActive) {
+      setBalance((b) => b + WELCOME_GRANT_CORE);
+      setTotalEarned((t) => t + WELCOME_GRANT_CORE);
+    }
     setEnergy(NEW_MINER_START_ENERGY_KWH);
     const starter = RIG_CATALOG.find((r) => r.key === "starter");
     setOwned((o) => [
@@ -1629,7 +1839,11 @@ export default function CoreMiningApp() {
       },
     ]);
     setWelcomeGrantClaimed(true);
-    notify(`Welcome! +${WELCOME_GRANT_CORE} CORE, a free Starter Rig & ${NEW_MINER_START_ENERGY_KWH} kWh energy — New Miner Boost active for 48h`);
+    notify(
+      promoActive
+        ? `Welcome! +${WELCOME_GRANT_CORE} CORE, a free Starter Rig & ${NEW_MINER_START_ENERGY_KWH} kWh energy — New Miner Boost active for 48h`
+        : `Welcome! A free Starter Rig & ${NEW_MINER_START_ENERGY_KWH} kWh energy — New Miner Boost active for 48h`
+    );
   }, [welcomeGrantClaimed, notify]);
 
   const addXp = useCallback((amount) => {
@@ -1750,6 +1964,18 @@ export default function CoreMiningApp() {
     networkActiveMinersBase *
       (1 + 0.05 * Math.sin(nowTick / 900000) + 0.02 * Math.sin(nowTick / 137000))
   );
+
+  // Real, server-aggregated versions of the two "network" display stats —
+  // these are what's actually shown in HomeTab/NetworkStatsModal. Falls
+  // back to the presentational simulation above only until the first
+  // /api/stats response lands (avoids a "0 miners" flash on first paint).
+  const displayActiveMiners = serverStats?.activeMiners ?? networkActiveMiners;
+  const realTotalMined = serverStats?.totalMined ?? schedule.totalMined;
+  const displaySchedule = {
+    ...schedule,
+    totalMined: realTotalMined,
+    percentMined: Math.min(100, (realTotalMined / MINING_POOL_SUPPLY) * 100),
+  };
 
   const incomePerHour =
     activeOwned.reduce((sum, r) => sum + rigEffectivePower(r) * networkRewardRate, 0) *
@@ -1878,6 +2104,7 @@ export default function CoreMiningApp() {
       return;
     }
     setBalance((b) => b + mission.reward);
+    setTotalEarned((t) => t + mission.reward);
     addXp(mission.xp);
     setMissionClaimed((mc) => [...mc, mission.key]);
     notify(`+${mission.reward} CORE — ${mission.label} complete`);
@@ -1904,6 +2131,7 @@ export default function CoreMiningApp() {
       return;
     }
     setBalance((b) => b + ach.reward);
+    setTotalEarned((t) => t + ach.reward);
     addXp(ach.xp);
     setAchievementsClaimed((c) => [...c, ach.key]);
     notify(`+${ach.reward} CORE — ${ach.label} complete`);
@@ -1952,6 +2180,7 @@ export default function CoreMiningApp() {
       return;
     }
     setBalance((b) => b + ms.reward);
+    setTotalEarned((t) => t + ms.reward);
     addXp(ms.xp);
     setReferralMilestonesClaimed((c) => [...c, ms.key]);
     notify(`+${ms.reward} CORE — ${ms.label} complete`);
@@ -2393,7 +2622,10 @@ export default function CoreMiningApp() {
     haptic("medium");
     if (claimedToday) return;
     const reward = DAILY_REWARDS[dailyCurrentDay - 1];
-    if (reward.core > 0) setBalance((b) => b + reward.core);
+    if (reward.core > 0) {
+      setBalance((b) => b + reward.core);
+      setTotalEarned((t) => t + reward.core);
+    }
     if (reward.energy > 0) setEnergy((e) => Math.min(MAX_ENERGY_KWH, e + reward.energy));
     setDailyStreak(dailyCurrentDay);
     setLastClaimDate(todayStr);
@@ -2551,10 +2783,10 @@ export default function CoreMiningApp() {
       {showNetworkModal && (
         <NetworkStatsModal
           onClose={() => setShowNetworkModal(false)}
-          schedule={schedule}
+          schedule={displaySchedule}
           networkHashrateTotal={networkHashrateTotal}
           networkRewardRate={networkRewardRate}
-          networkActiveMiners={networkActiveMiners}
+          networkActiveMiners={displayActiveMiners}
           miningPower={miningPower}
           poolSynergyBonusPct={poolSynergyBonusPct}
           joinedPool={joinedPool}
@@ -2597,9 +2829,9 @@ export default function CoreMiningApp() {
             owned={owned}
             featuredRigId={featuredRigId}
             poolInfo={joinedPool ? { name: joinedPool.name, feePct: joinedPool.feePct, isOwner: isPoolOwner } : null}
-            schedule={schedule}
+            schedule={displaySchedule}
             networkHashrateTotal={networkHashrateTotal}
-            networkActiveMiners={networkActiveMiners}
+            networkActiveMiners={displayActiveMiners}
             onOpenNetwork={() => { haptic("light"); setShowNetworkModal(true); }}
             user={user}
             onOpenProfile={() => { haptic("light"); setTab("profile"); }}
