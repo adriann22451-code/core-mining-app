@@ -297,20 +297,26 @@ const QUESTS = [
   { key: "q_daily_grinder", label: "Daily Grinder", desc: "Reach a 7-day login streak.", metric: "dailyStreak", target: 7, materials: [{ key: "copper_heatsink", qty: 1 }, { key: "asic_chip", qty: 1 }, { key: "thermal_paste", qty: 1 }], xp: 180 },
 ];
 
-// Craft a real COMPONENT_CATALOG entry from materials + a CORE fee. Priced
-// at roughly half the shop `price` for the same GPU — crafting is meant to
+// Fixed CORE fee to craft, keyed by the OUTPUT component's rarity — every
+// recipe of the same rarity costs the same to craft, regardless of which
+// GPU it produces. This is a flat crafting fee, not a discount off the
+// Market `price` for that GPU.
+const CRAFT_COST_BY_RARITY = { common: 200, rare: 550, epic: 900, legendary: 1150 };
+
+// Craft a real COMPONENT_CATALOG entry from materials + a fixed CORE fee
+// (see CRAFT_COST_BY_RARITY above) — crafting is meant to
 // be the cheaper path, paid for in quest-earned materials instead of CORE.
 const RECIPES = [
-  { key: "craft_rtx5060", outputKey: "rtx5060", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "cooling_fan", qty: 1 }], core: 240 },
-  { key: "craft_rtx5080", outputKey: "rtx5080", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }], core: 675 },
-  { key: "craft_rtx4090", outputKey: "rtx4090", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }], core: 975 },
-  { key: "craft_rtx5090", outputKey: "rtx5090", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }], core: 1175 },
-  { key: "craft_rx7600", outputKey: "rx7600", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], core: 215 },
-  { key: "craft_rx7800xt", outputKey: "rx7800xt", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }], core: 610 },
-  { key: "craft_rx7900xtx", outputKey: "rx7900xtx", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }], core: 890 },
-  { key: "craft_rx9070xt", outputKey: "rx9070xt", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }], core: 1075 },
-  { key: "craft_arc_a380", outputKey: "arc_a380", materials: [{ key: "silicon_die", qty: 1 }, { key: "pcb_board", qty: 1 }, { key: "cooling_fan", qty: 1 }], core: 75 },
-  { key: "craft_arc_b580", outputKey: "arc_b580", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }], core: 310 },
+  { key: "craft_rtx5060", outputKey: "rtx5060", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "cooling_fan", qty: 1 }] },
+  { key: "craft_rtx5080", outputKey: "rtx5080", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }] },
+  { key: "craft_rtx4090", outputKey: "rtx4090", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }] },
+  { key: "craft_rtx5090", outputKey: "rtx5090", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }] },
+  { key: "craft_rx7600", outputKey: "rx7600", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }] },
+  { key: "craft_rx7800xt", outputKey: "rx7800xt", materials: [{ key: "silicon_die", qty: 3 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 2 }, { key: "thermal_paste", qty: 1 }] },
+  { key: "craft_rx7900xtx", outputKey: "rx7900xtx", materials: [{ key: "silicon_die", qty: 4 }, { key: "pcb_board", qty: 2 }, { key: "vram_chip", qty: 3 }, { key: "copper_heatsink", qty: 1 }] },
+  { key: "craft_rx9070xt", outputKey: "rx9070xt", materials: [{ key: "silicon_die", qty: 5 }, { key: "pcb_board", qty: 3 }, { key: "vram_chip", qty: 4 }, { key: "copper_heatsink", qty: 2 }, { key: "asic_chip", qty: 1 }] },
+  { key: "craft_arc_a380", outputKey: "arc_a380", materials: [{ key: "silicon_die", qty: 1 }, { key: "pcb_board", qty: 1 }, { key: "cooling_fan", qty: 1 }] },
+  { key: "craft_arc_b580", outputKey: "arc_b580", materials: [{ key: "silicon_die", qty: 2 }, { key: "pcb_board", qty: 1 }, { key: "vram_chip", qty: 1 }, { key: "power_connector", qty: 1 }] },
 ];
 // Dismantling an owned (uninstalled) component pays back this fraction of
 // its recipe's materials, rounded up (min 1 each) — lets a player recover
@@ -709,30 +715,38 @@ function Chip({ children, color = "#8FA3B8", bg }) {
 // section stacking its own ad-hoc pile of text lines.
 function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, priceNote, action }) {
   return (
-    <GlowCard accent={accent} className="p-2.5 flex items-center gap-2.5">
-      {icon}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <p className="text-white text-[13px] font-bold truncate">{title}</p>
-          {rarityLabel && (
-            <span className="text-[9px] font-bold shrink-0" style={{ color: accent }}>
-              {rarityLabel}
-            </span>
+    <GlowCard accent={accent} className="p-3">
+      <div className="flex items-start gap-2.5">
+        {icon}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-white text-[13px] font-bold leading-snug">{title}</p>
+            {rarityLabel && (
+              <span className="text-[9px] font-bold shrink-0" style={{ color: accent }}>
+                {rarityLabel}
+              </span>
+            )}
+          </div>
+          {badges && badges.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">{badges}</div>
+          )}
+          {chips && chips.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">{chips}</div>
           )}
         </div>
-        {badges && badges.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">{badges}</div>
-        )}
-        {chips && chips.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">{chips}</div>
-        )}
       </div>
-      <div className="shrink-0 flex flex-col items-end gap-1">
-        <p className="text-white text-xs font-bold tabular-nums whitespace-nowrap">
+      <div
+        className="flex items-center justify-between gap-2 mt-2.5 pt-2.5"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        <p
+          className="text-white text-[11px] font-semibold tabular-nums whitespace-nowrap px-2 py-1 rounded-md shrink-0"
+          style={{ background: "rgba(255,255,255,0.05)" }}
+        >
           {price}
           {priceNote && <span className="text-[9px] text-slate-500 font-normal"> {priceNote}</span>}
         </p>
-        {action}
+        <div className="flex items-center gap-1.5 shrink-0">{action}</div>
       </div>
     </GlowCard>
   );
@@ -2671,18 +2685,19 @@ export default function CoreMiningApp() {
   // materials-gated path instead of a pure-CORE one.
   const craftComponent = (recipe) => {
     haptic("light");
+    const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
+    if (!comp) return;
+    const cost = CRAFT_COST_BY_RARITY[comp.rarity] ?? 0;
     const missing = recipe.materials.find((m) => (materialInventory[m.key] || 0) < m.qty);
     if (missing) {
       notify("Missing materials", "error");
       return;
     }
-    if (balance < recipe.core) {
+    if (balance < cost) {
       notify("Not enough CORE", "error");
       return;
     }
-    const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
-    if (!comp) return;
-    setBalance((b) => b - recipe.core);
+    setBalance((b) => b - cost);
     setMaterialInventory((inv) => {
       const next = { ...inv };
       for (const m of recipe.materials) next[m.key] = (next[m.key] || 0) - m.qty;
@@ -3388,6 +3403,10 @@ export default function CoreMiningApp() {
               onSetFeatured={setFeaturedRigId}
               onBack={() => { haptic("light"); setTab("home"); }}
               onSelect={(r) => setSelectedRigId(r.id)}
+              balance={balance}
+              materialInventory={materialInventory}
+              onCraft={craftComponent}
+              onRecycle={recycleComponent}
             />
           )
         )}
@@ -3404,9 +3423,6 @@ export default function CoreMiningApp() {
             onBuyBooster={buyBooster}
             energy={energy}
             onBuyEnergyPack={buyEnergyPack}
-            materialInventory={materialInventory}
-            onCraft={craftComponent}
-            onRecycle={recycleComponent}
           />
         )}
         {tab === "marketplace" && (
@@ -3747,11 +3763,42 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
 // ---------------------------------------------------------------------------
 // INVENTORY
 // ---------------------------------------------------------------------------
-function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId, onSetFeatured, onBack }) {
+function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId, onSetFeatured, onBack, balance = 0, materialInventory = {}, onCraft, onRecycle }) {
+  const [panel, setPanel] = useState("items"); // "items" | "craft"
   const stockEntries = Object.entries(componentInventory).filter(([, units]) => (units || []).length > 0);
   return (
     <div>
       <TopBar title="Inventory" onBack={onBack} right={<Search size={17} />} />
+
+      <div className="px-4 flex gap-4 text-xs mb-1 mt-1">
+        {[
+          { key: "items", label: "My Items" },
+          { key: "craft", label: "Craft" },
+        ].map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setPanel(p.key)}
+            className="pb-2 font-semibold"
+            style={{
+              color: panel === p.key ? C.cyan : "#5B6B82",
+              borderBottom: panel === p.key ? `2px solid ${C.cyan}` : "2px solid transparent",
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {panel === "craft" ? (
+        <CraftPanel
+          balance={balance}
+          componentInventory={componentInventory}
+          materialInventory={materialInventory}
+          onCraft={onCraft}
+          onRecycle={onRecycle}
+        />
+      ) : (
+      <>
       <div className="px-4 flex items-center justify-between mt-1 mb-2">
         <p className="text-[11px] text-slate-400 tracking-wide">YOUR RIGS</p>
         <p className="text-[11px] tabular-nums" style={{ color: owned.length >= MAX_RIGS ? C.orange : "#5B6B82" }}>
@@ -3867,6 +3914,89 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
           </div>
         )}
       </div>
+      </>
+      )}
+    </div>
+  );
+}
+
+// A standalone crafting panel — lives in Inventory (not Shop), since crafting
+// consumes materials + owned rigs' context rather than being a CORE purchase.
+// Each recipe's CORE fee is fixed per output rarity (CRAFT_COST_BY_RARITY),
+// not a discount off the Market price.
+function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, onCraft, onRecycle }) {
+  return (
+    <div className="px-4 flex flex-col gap-3 mt-2">
+      <GlowCard accent={C.purple} className="p-3">
+        <p className="text-[11px] font-bold text-white mb-2">Your materials</p>
+        {MATERIAL_CATALOG.every((m) => !(materialInventory[m.key] > 0)) ? (
+          <p className="text-[10px] text-slate-500">None yet — earn materials from Quests (Profile tab).</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => {
+              const rar = RARITY_STYLE[m.rarity];
+              return (
+                <Chip key={m.key} color={rar.color}>{m.name} ×{materialInventory[m.key]}</Chip>
+              );
+            })}
+          </div>
+        )}
+      </GlowCard>
+
+      {RECIPES.map((recipe) => {
+        const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
+        if (!comp) return null;
+        const rar = RARITY_STYLE[comp.rarity];
+        const cost = CRAFT_COST_BY_RARITY[comp.rarity] ?? 0;
+        const owned = (componentInventory[comp.key] || []).length;
+        const hasMaterials = recipe.materials.every((m) => (materialInventory[m.key] || 0) >= m.qty);
+        const canAfford = balance >= cost && hasMaterials;
+        return (
+          <ShopRow
+            key={recipe.key}
+            accent={rar.color}
+            icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />}
+            title={comp.name}
+            rarityLabel={rar.label}
+            badges={owned > 0 ? [<Chip key="owned" color={rar.color}>owned x{owned}</Chip>] : null}
+            chips={recipe.materials.map((m) => {
+              const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+              const matRar = mat ? RARITY_STYLE[mat.rarity] : null;
+              const have = materialInventory[m.key] || 0;
+              const enough = have >= m.qty;
+              return (
+                <Chip key={m.key} color={enough ? (matRar?.color ?? C.green) : C.orange}>
+                  {m.qty}× {mat?.name ?? m.key} ({have})
+                </Chip>
+              );
+            })}
+            price={<>{fmt(cost, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
+            action={
+              <>
+                <FuturisticButton
+                  onClick={() => onCraft(recipe)}
+                  disabled={!canAfford}
+                  accent={rar.color}
+                  accent2={C.blue}
+                  full={false}
+                  size="sm"
+                >
+                  Craft
+                </FuturisticButton>
+                {owned > 0 && (
+                  <button
+                    onClick={() => onRecycle(comp.key)}
+                    className="text-[9px] font-semibold px-2 py-1 rounded-lg"
+                    style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
+                  >
+                    Recycle
+                  </button>
+                )}
+              </>
+            }
+          />
+        );
+      })}
     </div>
   );
 }
@@ -3874,8 +4004,8 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
 // ---------------------------------------------------------------------------
 // MARKET
 // ---------------------------------------------------------------------------
-function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, componentInventory, onBuyComponent, activeBooster, onBuyBooster, energy, onBuyEnergyPack, materialInventory = {}, onCraft, onRecycle }) {
-  const tabs = ["Rigs", "Components", "Craft", "Boosters", "Packs"];
+function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, componentInventory, onBuyComponent, activeBooster, onBuyBooster, energy, onBuyEnergyPack }) {
+  const tabs = ["Rigs", "Components", "Boosters", "Packs"];
   return (
     <div>
       <TopBar title="Shop" right={<Search size={17} />} />
@@ -3971,75 +4101,6 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 />
               );
             })
-        ) : filter === "Craft" ? (
-          <>
-            <GlowCard accent={C.purple} className="p-3">
-              <p className="text-[11px] font-bold text-white mb-2">Your materials</p>
-              {MATERIAL_CATALOG.every((m) => !(materialInventory[m.key] > 0)) ? (
-                <p className="text-[10px] text-slate-500">None yet — earn materials from Quests (Profile tab).</p>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => (
-                    <Chip key={m.key} color={C.purple}>{m.name} ×{materialInventory[m.key]}</Chip>
-                  ))}
-                </div>
-              )}
-            </GlowCard>
-
-            {RECIPES.map((recipe) => {
-              const comp = COMPONENT_CATALOG.find((c) => c.key === recipe.outputKey);
-              if (!comp) return null;
-              const rar = RARITY_STYLE[comp.rarity];
-              const owned = (componentInventory[comp.key] || []).length;
-              const hasMaterials = recipe.materials.every((m) => (materialInventory[m.key] || 0) >= m.qty);
-              const canAfford = balance >= recipe.core && hasMaterials;
-              return (
-                <ShopRow
-                  key={recipe.key}
-                  accent={rar.color}
-                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />}
-                  title={comp.name}
-                  rarityLabel={rar.label}
-                  badges={owned > 0 ? [<Chip key="owned" color={rar.color}>owned x{owned}</Chip>] : null}
-                  chips={recipe.materials.map((m) => {
-                    const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
-                    const have = materialInventory[m.key] || 0;
-                    const enough = have >= m.qty;
-                    return (
-                      <Chip key={m.key} color={enough ? C.green : C.orange}>
-                        {m.qty}× {mat?.name ?? m.key} ({have})
-                      </Chip>
-                    );
-                  })}
-                  price={<>{fmt(recipe.core, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
-                  priceNote={`· shop price ${fmt(comp.price, 0)}`}
-                  action={
-                    <>
-                      <FuturisticButton
-                        onClick={() => onCraft(recipe)}
-                        disabled={!canAfford}
-                        accent={rar.color}
-                        accent2={C.blue}
-                        full={false}
-                        size="sm"
-                      >
-                        Craft
-                      </FuturisticButton>
-                      {owned > 0 && (
-                        <button
-                          onClick={() => onRecycle(comp.key)}
-                          className="text-[9px] font-semibold px-2 py-1 rounded-lg"
-                          style={{ border: "1px solid #2a3346", color: "#8FA3B8" }}
-                        >
-                          Recycle
-                        </button>
-                      )}
-                    </>
-                  }
-                />
-              );
-            })}
-          </>
         ) : filter === "Boosters" ? (
           BOOSTER_CATALOG.slice()
             .reverse()
@@ -4887,11 +4948,12 @@ function QuestsModal({ onClose, metrics, claimed, onClaim }) {
                   <div className="flex flex-wrap gap-1 mb-2">
                     {q.materials.map((m) => {
                       const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+                      const color = mat ? RARITY_STYLE[mat.rarity].color : C.purple;
                       return (
                         <span
                           key={m.key}
                           className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                          style={{ background: `${C.purple}18`, color: C.purple }}
+                          style={{ background: `${color}18`, color }}
                         >
                           {m.qty}× {mat?.name ?? m.key}
                         </span>
