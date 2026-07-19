@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
-import { TonConnectButton, useTonAddress } from "@tonconnect/ui-react";
+import { TonConnectButton, useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 import { soundEngine } from "./sound";
 import {
   Home, Store, Package, ArrowUpCircle, User, Zap, Database,
   Gift, Trophy, Users, Target, ChevronLeft, Bell, Settings, Sparkles,
   Gauge, ShieldCheck, Flame, Coins, Check, X, Boxes,
   Search, Wrench, Star, Plus, Volume2, Vibrate, Globe, ChevronDown,
-  HelpCircle, FileText, Music, ArrowUpDown, Cpu
+  HelpCircle, FileText, Music, ArrowUpDown, Cpu,
+  ArrowDownToLine, ArrowUpFromLine, Loader2, CheckCircle2, Wallet
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -558,6 +559,23 @@ const MINING_POOL_SUPPLY = MAX_SUPPLY * (ALLOCATION_PCT.mining / 100); // 80,000
 const MARKETING_SUPPLY = MAX_SUPPLY * (ALLOCATION_PCT.marketing / 100); // 10,000,000
 const RESERVE_SUPPLY = MAX_SUPPLY * (ALLOCATION_PCT.reserve / 100); // 5,000,000
 const FOUNDER_SUPPLY = MAX_SUPPLY * (ALLOCATION_PCT.founder / 100); // 5,000,000
+
+// ---------------------------------------------------------------------------
+// WALLET — TON deposit / CORE withdraw
+// ---------------------------------------------------------------------------
+// REPLACE with your real treasury wallet address before going live — this is
+// where TonConnect sends deposited TON. Get one from your TON wallet app.
+const TREASURY_TON_ADDRESS = "UQDkQYsWZm8-ib8Vco22U9kKFrPzkTDTFl2D3I3VNGu8K0YT";
+// How much CORE a deposit is credited as, per TON sent. Tune to your economy.
+const DEPOSIT_CORE_PER_TON = 100_000;
+const MIN_DEPOSIT_TON = 0.1;
+const QUICK_DEPOSIT_AMOUNTS_TON = [0.5, 1, 2, 5];
+// Withdrawals aren't paid out automatically (no live on-chain CORE token yet
+// — see the disclosure in LegalModal). A request just gets queued for manual
+// review; see api/withdraw.js.
+const MIN_WITHDRAW_CORE = 5000;
+const WITHDRAW_FEE_PCT = 2;
+
 const YEAR1_EMISSION = 20_000_000;
 const HALVING_RATE = 0.5;
 const SECONDS_PER_YEAR = 365 * 24 * 3600;
@@ -2023,6 +2041,38 @@ async function apiSubmitReferral(initData, referrerCode) {
   }
 }
 
+// Logs a TON deposit after TonConnect has broadcast it (see api/deposit.js).
+// This only records the tx for reconciliation — CORE is credited optimistically
+// on the client the moment the wallet confirms the send.
+async function apiSubmitDeposit(initData, { txHash, tonAmount, coreAmount, walletAddress }) {
+  try {
+    const res = await fetch("/api/deposit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData, txHash, tonAmount, coreAmount, walletAddress }),
+    });
+    return res.ok ? await res.json() : null;
+  } catch (err) {
+    console.warn("apiSubmitDeposit failed:", err);
+    return null;
+  }
+}
+
+// Queues a CORE withdrawal request for manual review (see api/withdraw.js).
+async function apiSubmitWithdraw(initData, { coreAmount, walletAddress }) {
+  try {
+    const res = await fetch("/api/withdraw", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData, coreAmount, walletAddress }),
+    });
+    return res.ok ? await res.json() : { ok: false, error: "network_error" };
+  } catch (err) {
+    console.warn("apiSubmitWithdraw failed:", err);
+    return { ok: false, error: "network_error" };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // MAIN APP
 // ---------------------------------------------------------------------------
@@ -2174,6 +2224,8 @@ export default function CoreMiningApp() {
   const [showCreatePoolModal, setShowCreatePoolModal] = useState(false);
   const [selectedPoolId, setSelectedPoolId] = useState(null);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [listings, setListings] = useState(savedGame.listings ?? INITIAL_LISTINGS);
   const [showSellModal, setShowSellModal] = useState(false);
   const yourDisplayName = user?.first_name || "You";
@@ -3495,6 +3547,28 @@ export default function CoreMiningApp() {
         />
       )}
 
+      {showDepositModal && (
+        <WalletDepositModal
+          onClose={() => setShowDepositModal(false)}
+          balance={balance}
+          setBalance={setBalance}
+          initData={initData}
+          notify={notify}
+          haptic={haptic}
+        />
+      )}
+
+      {showWithdrawModal && (
+        <WalletWithdrawModal
+          onClose={() => setShowWithdrawModal(false)}
+          balance={balance}
+          setBalance={setBalance}
+          initData={initData}
+          notify={notify}
+          haptic={haptic}
+        />
+      )}
+
       {showSettingsModal && (
         <SettingsModal
           onClose={() => setShowSettingsModal(false)}
@@ -3647,6 +3721,9 @@ export default function CoreMiningApp() {
             )}
             onOpenCodex={() => { haptic("light"); setShowCodexModal(true); }}
             onOpenSettings={() => { haptic("light"); setShowSettingsModal(true); }}
+            balance={balance}
+            onOpenDeposit={() => { haptic("light"); setShowDepositModal(true); }}
+            onOpenWithdraw={() => { haptic("light"); setShowWithdrawModal(true); }}
           />
         )}
       </div>
@@ -5547,7 +5624,7 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
 // ---------------------------------------------------------------------------
 // PROFILE
 // ---------------------------------------------------------------------------
-function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenCodex, onOpenSettings }) {
+function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenCodex, onOpenSettings, onOpenDeposit, onOpenWithdraw }) {
   const pct = (xp / xpToNext) * 100;
   const tiles = [
     { icon: Trophy, label: "Achievements", color: C.orange },
@@ -5643,6 +5720,25 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
             <div className="shrink-0">
               <TonConnectButton />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              onClick={onOpenDeposit}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg"
+              style={{ background: `${C.green}15`, border: `1px solid ${C.green}33` }}
+            >
+              <ArrowDownToLine size={13} color={C.green} />
+              <span className="text-[11px] font-bold" style={{ color: C.green }}>Deposit</span>
+            </button>
+            <button
+              onClick={onOpenWithdraw}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg"
+              style={{ background: `${C.orange}15`, border: `1px solid ${C.orange}33` }}
+            >
+              <ArrowUpFromLine size={13} color={C.orange} />
+              <span className="text-[11px] font-bold" style={{ color: C.orange }}>Withdraw</span>
+            </button>
           </div>
         </GlowCard>
       </div>
@@ -6286,6 +6382,658 @@ function PoolDetailModal({ pool, joinedPoolId, miningPower, poolIncomePerHour, o
 // ---------------------------------------------------------------------------
 // NETWORK STATS
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// WALLET — DEPOSIT (TON -> CORE)
+// ---------------------------------------------------------------------------
+// Sends real TON via the connected TonConnect wallet to the treasury address,
+// then credits CORE client-side once the wallet confirms the send. The tx is
+// also logged to /api/deposit so it can be reconciled against the chain later.
+function WalletDepositModal({ onClose, balance, setBalance, initData, notify, haptic }) {
+  const tonAddress = useTonAddress();
+  const [tonConnectUI] = useTonConnectUI();
+  const [amount, setAmount] = useState(String(QUICK_DEPOSIT_AMOUNTS_TON[1]));
+  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const numAmount = parseFloat(amount) || 0;
+  const coreCredit = Math.floor(numAmount * DEPOSIT_CORE_PER_TON);
+  const canSend = tonAddress && numAmount >= MIN_DEPOSIT_TON && status !== "sending";
+
+  async function handleDeposit() {
+    if (!tonAddress) {
+      notify("Connect your TON wallet first", "error");
+      return;
+    }
+    if (numAmount < MIN_DEPOSIT_TON) {
+      notify(`Minimum deposit is ${MIN_DEPOSIT_TON} TON`, "error");
+      return;
+    }
+    setStatus("sending");
+    setErrorMsg("");
+    try {
+      const result = await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [
+          {
+            address: TREASURY_TON_ADDRESS,
+            amount: String(Math.round(numAmount * 1e9)), // TON -> nanoTON
+          },
+        ],
+      });
+      // Wallet confirmed + broadcast the transaction. We credit CORE right
+      // away for a snappy UX; the boc is logged so it can be verified/
+      // reconciled against the chain on the backend.
+      setBalance((b) => b + coreCredit);
+      haptic?.("success");
+      setStatus("success");
+      apiSubmitDeposit(initData, {
+        txHash: result?.boc ?? null,
+        tonAmount: numAmount,
+        coreAmount: coreCredit,
+        walletAddress: tonAddress,
+      });
+    } catch (err) {
+      console.warn("deposit sendTransaction failed:", err);
+      setStatus("error");
+      setErrorMsg(
+        err?.message?.toLowerCase().includes("reject")
+          ? "Transaction was cancelled in your wallet."
+          : "Couldn't send the transaction. Please try again."
+      );
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(3,5,10,0.72)" }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative overflow-hidden rounded-2xl p-5"
+          style={{
+            background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 55%, #060911 100%)",
+            border: `1px solid ${C.green}44`,
+            boxShadow: "0 30px 60px -25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ArrowDownToLine size={16} color={C.green} />
+              <h2 className="text-white font-extrabold text-sm tracking-wide">DEPOSIT TON</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
+
+          {status === "success" ? (
+            <div className="flex flex-col items-center text-center py-4">
+              <CheckCircle2 size={40} color={C.green} />
+              <p className="text-white font-bold text-sm mt-3">Deposit sent!</p>
+              <p className="text-slate-400 text-[12px] mt-1">
+                +{fmt(coreCredit, 0)} <span style={{ color: C.green }}>CORE</span> credited to your balance.
+              </p>
+              <button
+                onClick={onClose}
+                className="w-full mt-5 py-2.5 rounded-xl font-bold text-sm"
+                style={{ background: C.green, color: "#062015" }}
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-slate-400 text-[11px] mb-3">
+                Send TON from your connected wallet to top up your CORE balance.
+              </p>
+
+              {!tonAddress && (
+                <div
+                  className="rounded-xl p-3 mb-3 flex items-center gap-2"
+                  style={{ background: `${C.orange}12`, border: `1px solid ${C.orange}33` }}
+                >
+                  <Wallet size={14} color={C.orange} />
+                  <span className="text-[11px]" style={{ color: C.orange }}>
+                    Connect your TON wallet in the Profile tab first.
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {QUICK_DEPOSIT_AMOUNTS_TON.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setAmount(String(v))}
+                    className="py-2 rounded-lg text-[11px] font-bold"
+                    style={{
+                      background: numAmount === v ? `${C.green}22` : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${numAmount === v ? C.green : "#1c2536"}`,
+                      color: numAmount === v ? C.green : "#8FA0B8",
+                    }}
+                  >
+                    {v} TON
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
+                <label className="text-[10px] text-slate-500">Amount (TON)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.1"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full bg-transparent text-white font-bold text-lg tabular-nums outline-none mt-1"
+                  placeholder="0.0"
+                />
+                <div className="flex justify-between items-center mt-2 text-[11px]">
+                  <span className="text-slate-500">You'll receive</span>
+                  <span className="font-bold tabular-nums" style={{ color: C.green }}>
+                    +{fmt(coreCredit, 0)} CORE
+                  </span>
+                </div>
+              </div>
+
+              {status === "error" && (
+                <p className="text-[11px] mb-2" style={{ color: "#FF6B6B" }}>{errorMsg}</p>
+              )}
+
+              <button
+                onClick={handleDeposit}
+                disabled={!canSend}
+                className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                style={{
+                  background: canSend ? C.green : "rgba(255,255,255,0.06)",
+                  color: canSend ? "#062015" : "#5B6B82",
+                }}
+              >
+                {status === "sending" ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" /> Confirm in wallet…
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownToLine size={15} /> Send {numAmount || 0} TON
+                  </>
+                )}
+              </button>
+              <p className="text-[10px] text-slate-600 mt-2 text-center">
+                Minimum deposit {MIN_DEPOSIT_TON} TON · sent directly on-chain via your wallet.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// WALLET — WITHDRAW (CORE -> TON)
+// ---------------------------------------------------------------------------
+// CORE has no live on-chain token yet, so this doesn't pay out automatically.
+// It deducts the balance and queues a request (api/withdraw.js) for manual
+// review/payout — the same disclosure already shown in the Privacy modal.
+function WalletWithdrawModal({ onClose, balance, setBalance, initData, notify, haptic }) {
+  const tonAddress = useTonAddress();
+  const [amount, setAmount] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const numAmount = parseFloat(amount) || 0;
+  const fee = Math.ceil((numAmount * WITHDRAW_FEE_PCT) / 100);
+  const netAmount = Math.max(0, numAmount - fee);
+  const canSend =
+    tonAddress && numAmount >= MIN_WITHDRAW_CORE && numAmount <= balance && status !== "sending";
+
+  async function handleWithdraw() {
+    if (!tonAddress) {
+      notify("Connect your TON wallet first", "error");
+      return;
+    }
+    if (numAmount < MIN_WITHDRAW_CORE) {
+      notify(`Minimum withdrawal is ${fmt(MIN_WITHDRAW_CORE, 0)} CORE`, "error");
+      return;
+    }
+    if (numAmount > balance) {
+      notify("Not enough CORE balance", "error");
+      return;
+    }
+    setStatus("sending");
+    setErrorMsg("");
+    const result = await apiSubmitWithdraw(initData, { coreAmount: numAmount, walletAddress: tonAddress });
+    if (result?.ok) {
+      setBalance((b) => b - numAmount);
+      haptic?.("success");
+      setStatus("success");
+    } else {
+      setStatus("error");
+      setErrorMsg("Couldn't submit your request. Please try again in a moment.");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(3,5,10,0.72)" }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative overflow-hidden rounded-2xl p-5"
+          style={{
+            background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 55%, #060911 100%)",
+            border: `1px solid ${C.orange}44`,
+            boxShadow: "0 30px 60px -25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ArrowUpFromLine size={16} color={C.orange} />
+              <h2 className="text-white font-extrabold text-sm tracking-wide">WITHDRAW CORE</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
+
+          {status === "success" ? (
+            <div className="flex flex-col items-center text-center py-4">
+              <CheckCircle2 size={40} color={C.orange} />
+              <p className="text-white font-bold text-sm mt-3">Request submitted</p>
+              <p className="text-slate-400 text-[12px] mt-1 px-2">
+                {fmt(numAmount, 0)} CORE is pending review. Approved withdrawals are typically sent within 24–48h.
+              </p>
+              <button
+                onClick={onClose}
+                className="w-full mt-5 py-2.5 rounded-xl font-bold text-sm"
+                style={{ background: C.orange, color: "#2B1600" }}
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-slate-400 text-[11px] mb-3">
+                Request a CORE withdrawal to your connected wallet. Requests are reviewed before payout.
+              </p>
+
+              {!tonAddress && (
+                <div
+                  className="rounded-xl p-3 mb-3 flex items-center gap-2"
+                  style={{ background: `${C.orange}12`, border: `1px solid ${C.orange}33` }}
+                >
+                  <Wallet size={14} color={C.orange} />
+                  <span className="text-[11px]" style={{ color: C.orange }}>
+                    Connect your TON wallet in the Profile tab first.
+                  </span>
+                </div>
+              )}
+
+              <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[10px] text-slate-500">Amount (CORE)</label>
+                  <button
+                    onClick={() => setAmount(String(Math.floor(balance)))}
+                    className="text-[10px] font-bold"
+                    style={{ color: C.orange }}
+                  >
+                    MAX
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full bg-transparent text-white font-bold text-lg tabular-nums outline-none"
+                  placeholder="0"
+                />
+                <p className="text-[10px] text-slate-600 mt-1">
+                  Balance: {fmt(balance, 0)} CORE
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1 mb-3 text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Network fee ({WITHDRAW_FEE_PCT}%)</span>
+                  <span className="text-slate-400 tabular-nums">-{fmt(fee, 0)} CORE</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">You'll get</span>
+                  <span className="font-bold tabular-nums" style={{ color: C.orange }}>{fmt(netAmount, 0)} CORE</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">To wallet</span>
+                  <span className="text-slate-400 tabular-nums">
+                    {tonAddress ? `${tonAddress.slice(0, 6)}...${tonAddress.slice(-4)}` : "—"}
+                  </span>
+                </div>
+              </div>
+
+              {status === "error" && (
+                <p className="text-[11px] mb-2" style={{ color: "#FF6B6B" }}>{errorMsg}</p>
+              )}
+
+              <button
+                onClick={handleWithdraw}
+                disabled={!canSend}
+                className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                style={{
+                  background: canSend ? C.orange : "rgba(255,255,255,0.06)",
+                  color: canSend ? "#2B1600" : "#5B6B82",
+                }}
+              >
+                {status === "sending" ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" /> Submitting…
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpFromLine size={15} /> Request Withdrawal
+                  </>
+                )}
+              </button>
+              <p className="text-[10px] text-slate-600 mt-2 text-center">
+                Minimum withdrawal {fmt(MIN_WITHDRAW_CORE, 0)} CORE.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Tiny deterministic PRNG so the graph's node layout stays stable across
+// re-renders (same seed -> same "map") instead of jittering every mount.
+function seededRandom(seed) {
+  let t = seed >>> 0;
+  return function () {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Live, animated "network map" — a canvas-rendered mesh of miner nodes
+// converging on a central pool hub, with traveling light-pulses standing in
+// for shares being submitted across the network. Purely presentational;
+// node count/pulse rate are loosely driven by real stats so it feels tied
+// to the numbers on screen instead of decorative noise.
+function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
+  const wrapRef = useRef(null);
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+
+  const nodeCount = Math.min(48, Math.max(18, Math.round(Math.sqrt(Math.max(activeMiners, 1)) * 1.7)));
+
+  const nodes = React.useMemo(() => {
+    const rand = seededRandom(nodeCount * 7919 + 13);
+    const arr = [];
+    for (let i = 0; i < nodeCount; i++) {
+      const angle = rand() * Math.PI * 2;
+      const radius = 0.2 + rand() * 0.8;
+      arr.push({
+        angle,
+        baseX: 0.5 + Math.cos(angle) * radius * 0.46,
+        baseY: 0.5 + Math.sin(angle) * radius * 0.42,
+        phase: rand() * Math.PI * 2,
+        speed: 0.35 + rand() * 0.5,
+        amp: 0.008 + rand() * 0.012,
+        r: rand() < 0.14 ? 2.6 : 1.5 + rand() * 1,
+        peer: rand() < 0.45,
+      });
+    }
+    // node 0 is reserved as "YOU" — pull it in a bit closer to the hub
+    arr[0] = { ...arr[0], baseX: 0.5 + (arr[0].baseX - 0.5) * 0.55, baseY: 0.5 + (arr[0].baseY - 0.5) * 0.55, r: 3.2 };
+    return arr;
+  }, [nodeCount]);
+
+  const meshEdges = React.useMemo(() => {
+    const rand = seededRandom(nodeCount * 104729 + 7);
+    const edges = [];
+    for (let i = 1; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        if (!nodes[i].peer || !nodes[j].peer) continue;
+        const dx = nodes[i].baseX - nodes[j].baseX;
+        const dy = nodes[i].baseY - nodes[j].baseY;
+        if (Math.hypot(dx, dy) < 0.17 && rand() < 0.55) edges.push([i, j]);
+      }
+    }
+    return edges.slice(0, 40);
+  }, [nodes, nodeCount]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
+    const ctx = canvas.getContext("2d");
+    let width = 0, height = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resize() {
+      width = wrap.clientWidth;
+      height = wrap.clientHeight;
+      canvas.width = Math.max(1, width * dpr);
+      canvas.height = Math.max(1, height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(wrap);
+
+    const hubSpokes = nodes.map((n, i) => i).filter((i) => i !== 0);
+    // Pulse spawn rate loosely scales with hashrate — a busier network feels busier.
+    const spawnEveryMs = Math.max(140, 900 - Math.min(hashrateTotal, 4000) / 6);
+    let pulses = [];
+    let lastSpawn = 0;
+    let sweepAngle = 0;
+
+    function project(n, t) {
+      const dx = Math.sin(t * n.speed + n.phase) * n.amp;
+      const dy = Math.cos(t * n.speed * 0.8 + n.phase) * n.amp;
+      return { x: (n.baseX + dx) * width, y: (n.baseY + dy) * height };
+    }
+
+    function spawnPulse(t) {
+      const toYou = Math.random() < 0.22;
+      const kind = toYou ? "you" : Math.random() < 0.75 ? "hub" : "mesh";
+      if (kind === "hub" && hubSpokes.length) {
+        const target = hubSpokes[(Math.random() * hubSpokes.length) | 0];
+        pulses.push({ type: "hub", a: 0, b: target, fwd: Math.random() < 0.6, start: t, dur: 1400 + Math.random() * 900 });
+      } else if (kind === "you") {
+        pulses.push({ type: "hub", a: 0, b: 0, fwd: true, start: t, dur: 1100, isYou: true });
+      } else if (meshEdges.length) {
+        const [a, b] = meshEdges[(Math.random() * meshEdges.length) | 0];
+        pulses.push({ type: "mesh", a, b, fwd: Math.random() < 0.5, start: t, dur: 1700 + Math.random() * 1000 });
+      }
+      if (pulses.length > 70) pulses = pulses.slice(-70);
+    }
+
+    function frame(t) {
+      if (!width || !height) { rafRef.current = requestAnimationFrame(frame); return; }
+      if (t - lastSpawn > spawnEveryMs) { spawnPulse(t); lastSpawn = t; }
+
+      // fading trail wash instead of a hard clear — lets pulses leave a soft streak
+      ctx.fillStyle = "rgba(7,11,20,0.32)";
+      ctx.fillRect(0, 0, width, height);
+
+      const hub = { x: width / 2, y: height / 2 };
+
+      // radar sweep + concentric rings around the hub
+      sweepAngle += 0.006;
+      ctx.save();
+      for (let ring = 1; ring <= 3; ring++) {
+        ctx.beginPath();
+        ctx.arc(hub.x, hub.y, ring * Math.min(width, height) * 0.14, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0,229,255,${0.07 - ring * 0.015})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      const sweepR = Math.min(width, height) * 0.44;
+      const grad = ctx.createConicGradient
+        ? ctx.createConicGradient(sweepAngle, hub.x, hub.y)
+        : null;
+      if (grad) {
+        grad.addColorStop(0, "rgba(0,229,255,0.16)");
+        grad.addColorStop(0.06, "rgba(0,229,255,0)");
+        grad.addColorStop(1, "rgba(0,229,255,0)");
+        ctx.beginPath();
+        ctx.moveTo(hub.x, hub.y);
+        ctx.arc(hub.x, hub.y, sweepR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // mesh (peer-to-peer) edges — faint, organic "back roads"
+      meshEdges.forEach(([ai, bi]) => {
+        const a = project(nodes[ai], t / 1000);
+        const b = project(nodes[bi], t / 1000);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = "rgba(90,140,220,0.12)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // hub -> node spokes — the main "highways"
+      hubSpokes.forEach((i) => {
+        const p = project(nodes[i], t / 1000);
+        ctx.beginPath();
+        ctx.moveTo(hub.x, hub.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.strokeStyle = "rgba(0,229,255,0.10)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // your link — brighter, distinct
+      const you = project(nodes[0], t / 1000);
+      ctx.beginPath();
+      ctx.moveTo(hub.x, hub.y);
+      ctx.lineTo(you.x, you.y);
+      ctx.strokeStyle = "rgba(0,255,171,0.35)";
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      // pulses traveling along edges
+      pulses = pulses.filter((p) => t - p.start < p.dur);
+      pulses.forEach((p) => {
+        const prog = (t - p.start) / p.dur;
+        let sx, sy, ex, ey;
+        if (p.type === "hub") {
+          sx = hub.x; sy = hub.y;
+          const dest = project(nodes[p.b], t / 1000);
+          ex = dest.x; ey = dest.y;
+        } else {
+          const na = project(nodes[p.a], t / 1000);
+          const nb = project(nodes[p.b], t / 1000);
+          sx = na.x; sy = na.y; ex = nb.x; ey = nb.y;
+        }
+        const k = p.fwd ? prog : 1 - prog;
+        const x = sx + (ex - sx) * k;
+        const y = sy + (ey - sy) * k;
+        const fade = Math.sin(Math.min(prog, 1) * Math.PI);
+        const color = p.isYou ? "0,255,171" : p.type === "mesh" ? "120,170,255" : "0,229,255";
+        ctx.beginPath();
+        ctx.arc(x, y, p.isYou ? 2.6 : 1.9, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${color},${0.9 * fade})`;
+        ctx.shadowColor = `rgba(${color},0.9)`;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // peer / miner nodes
+      nodes.forEach((n, i) => {
+        if (i === 0) return;
+        const p = project(n, t / 1000);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(120,170,255,0.85)";
+        ctx.shadowColor = "rgba(0,229,255,0.6)";
+        ctx.shadowBlur = 4;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // "YOU" node — distinct green, pulsing ring
+      const yp = project(nodes[0], t / 1000);
+      const yourPulse = 1 + 0.25 * Math.sin(t / 260);
+      ctx.beginPath();
+      ctx.arc(yp.x, yp.y, nodes[0].r * yourPulse + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(0,255,171,0.35)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(yp.x, yp.y, nodes[0].r, 0, Math.PI * 2);
+      ctx.fillStyle = C.green;
+      ctx.shadowColor = C.green;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // hub — the pool itself
+      const hubPulse = 1 + 0.08 * Math.sin(t / 500);
+      ctx.beginPath();
+      ctx.arc(hub.x, hub.y, 9 * hubPulse, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(0,229,255,0.5)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(hub.x, hub.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = C.blue;
+      ctx.shadowColor = C.cyan;
+      ctx.shadowBlur = 14;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      rafRef.current = requestAnimationFrame(frame);
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      ro.disconnect();
+    };
+  }, [nodes, meshEdges, hashrateTotal]);
+
+  return (
+    <div className="relative w-full rounded-xl overflow-hidden mb-3" style={{ border: "1px solid #1c2536" }}>
+      <div ref={wrapRef} className="relative w-full" style={{ height: 172, background: "#070b14" }}>
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+        <div className="absolute top-2 left-2.5 flex items-center gap-1">
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: C.green, boxShadow: `0 0 6px 2px ${C.green}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
+          />
+          <span className="text-[9px] font-extrabold tracking-widest text-slate-300">LIVE NETWORK MAP</span>
+        </div>
+        <div className="absolute bottom-2 right-2.5 flex items-center gap-2.5">
+          <span className="flex items-center gap-1 text-[9px] text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.green, boxShadow: `0 0 4px 1px ${C.green}` }} /> You
+          </span>
+          <span className="flex items-center gap-1 text-[9px] text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.blue, boxShadow: `0 0 4px 1px ${C.cyan}` }} /> Pool
+          </span>
+          <span className="flex items-center gap-1 text-[9px] text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#78AAFF" }} /> Miners
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRewardRate, networkActiveMiners, miningPower, poolSynergyBonusPct, joinedPool }) {
   const yourSharePct = networkHashrateTotal > 0 ? (miningPower / networkHashrateTotal) * 100 : 0;
   const allocRows = [
@@ -6336,6 +7084,8 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
             <span className="text-[10px] font-extrabold tracking-wide" style={{ color: C.green }}>LIVE</span>
             <span className="text-[11px] text-slate-500">· Max supply {fmt(MAX_SUPPLY, 0)} CORE</span>
           </div>
+
+          <NetworkGraphVisual activeMiners={networkActiveMiners} hashrateTotal={networkHashrateTotal} />
 
           <div className="mb-4 relative">
             <div className="flex justify-between text-[11px] text-slate-400 mb-1">
