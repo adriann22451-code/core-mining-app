@@ -770,6 +770,48 @@ function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, price
   );
 }
 
+// Compact vertical card used for the Shop grid (2 columns, ~8 cards visible
+// per screen with no scrolling) — same accent/glow/bracket language as
+// ShopRow, just reflowed top-to-bottom instead of left-to-right so each
+// item takes far less vertical room.
+function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
+  return (
+    <GlowCard
+      accent={accent}
+      brackets
+      className="p-2.5 flex flex-col items-center text-center transition-transform duration-150 active:scale-[0.95]"
+    >
+      <div
+        className="absolute inset-x-3 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
+      />
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center mb-1.5"
+        style={{
+          background: `radial-gradient(circle, ${accent}22, transparent 70%)`,
+          filter: `drop-shadow(0 0 6px ${accent}55)`,
+        }}
+      >
+        {icon}
+      </div>
+      <p className="text-white text-[11px] font-bold leading-tight w-full truncate">{title}</p>
+      {rarityLabel && (
+        <p className="text-[9px] font-bold tracking-wide mt-0.5" style={{ color: accent }}>
+          {rarityLabel}
+        </p>
+      )}
+      {stat && <div className="flex flex-wrap justify-center gap-1 mt-1.5">{stat}</div>}
+      <p
+        className="text-white text-[10px] font-semibold tabular-nums mt-2 px-2 py-1 rounded-md w-full"
+        style={{ background: "rgba(255,255,255,0.05)" }}
+      >
+        {price}
+      </p>
+      <div className="w-full mt-1.5">{action}</div>
+    </GlowCard>
+  );
+}
+
 function StatBar({ label, value, max = 100, color = C.cyan, suffix = "%" }) {
   const pct = Math.min(100, (value / max) * 100);
   return (
@@ -4198,7 +4240,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
         ))}
       </div>
 
-      <div className="px-4 flex flex-col gap-3 mt-2">
+      <div className="px-4 grid grid-cols-2 gap-2.5 mt-2">
         {filter === "Rigs" ? (
           RIG_CATALOG.slice()
             .reverse()
@@ -4207,16 +4249,14 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const atCap = ownedRigCount >= MAX_RIGS;
               const canAfford = balance >= rig.baseCost && !atCap;
               return (
-                <ShopRow
+                <ShopCard
                   key={rig.key}
                   accent={rar.color}
-                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={44} />}
+                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={30} />}
                   title={rig.name}
                   rarityLabel={rar.label}
-                  badges={rig.brand ? [<Chip key="brand">{rig.brand}</Chip>] : null}
-                  chips={[
+                  stat={[
                     <Chip key="power" color={C.cyan}>{fmt(rig.basePower)} TH/s</Chip>,
-                    <Chip key="slots" color={C.purple}>{SLOT_CAPACITY[rig.rarity]} slots</Chip>,
                     <Chip key="kwh" color={C.orange}>{rig.kwh} kWh/hr</Chip>,
                   ]}
                   price={<>{fmt(rig.baseCost, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
@@ -4226,7 +4266,6 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                       disabled={!canAfford}
                       accent={rar.color}
                       accent2={C.blue}
-                      full={false}
                       size="sm"
                     >
                       {atCap ? `${MAX_RIGS}/${MAX_RIGS}` : "Buy"}
@@ -4243,21 +4282,16 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const owned = (componentInventory[comp.key] || []).length;
               const canAfford = balance >= comp.price;
               return (
-                <ShopRow
+                <ShopCard
                   key={comp.key}
                   accent={rar.color}
-                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={44} />}
+                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={30} />}
                   title={comp.name}
                   rarityLabel={rar.label}
-                  badges={[
-                    comp.brand && <Chip key="brand">{comp.brand}</Chip>,
-                    owned > 0 && <Chip key="owned" color={rar.color}>owned x{owned}</Chip>,
-                  ].filter(Boolean)}
-                  chips={[
-                    <Chip key="tflops">{comp.tflops} TFLOPS · {comp.vram}</Chip>,
+                  stat={[
                     <Chip key="boost" color={C.green}>+{comp.boostPct}% boost</Chip>,
-                    <Chip key="power" color={C.cyan}>+{comp.power} TH/s</Chip>,
-                  ]}
+                    owned > 0 && <Chip key="owned" color={rar.color}>x{owned}</Chip>,
+                  ].filter(Boolean)}
                   price={<>{fmt(comp.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
                   action={
                     <FuturisticButton
@@ -4265,7 +4299,6 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                       disabled={!canAfford}
                       accent={rar.color}
                       accent2={C.blue}
-                      full={false}
                       size="sm"
                     >
                       Buy
@@ -4282,14 +4315,14 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               const isActive = activeBooster && activeBooster.key === boost.key;
               const canAfford = balance >= boost.price;
               return (
-                <ShopRow
+                <ShopCard
                   key={boost.key}
                   accent={rar.color}
-                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={44} />}
+                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={30} />}
                   title={boost.name}
                   rarityLabel={rar.label}
-                  chips={[
-                    <Chip key="boost" color={C.green}>+{boost.boostPct}% income</Chip>,
+                  stat={[
+                    <Chip key="boost" color={C.green}>+{boost.boostPct}%</Chip>,
                     <Chip key="dur" color={C.orange}>{boost.durationHours}h</Chip>,
                   ]}
                   price={<>{fmt(boost.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
@@ -4299,7 +4332,6 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                       disabled={!canAfford}
                       accent={rar.color}
                       accent2={C.orange}
-                      full={false}
                       size="sm"
                     >
                       {isActive ? "Extend" : "Activate"}
@@ -4314,13 +4346,13 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
             const isFull = energy >= MAX_ENERGY_KWH;
             const canAfford = balance >= pack.price;
             return (
-              <ShopRow
+              <ShopCard
                 key={pack.key}
                 accent={rar.color}
-                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={44} />}
+                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={30} />}
                 title={pack.name}
                 rarityLabel={rar.label}
-                chips={[<Chip key="amount" color={C.orange}>+{pack.amount} kWh</Chip>]}
+                stat={[<Chip key="amount" color={C.orange}>+{pack.amount} kWh</Chip>]}
                 price={<>{fmt(pack.price, 0)} <span style={{ color: C.cyan }}>CORE</span></>}
                 action={
                   <FuturisticButton
@@ -4328,7 +4360,6 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                     disabled={isFull || !canAfford}
                     accent={C.orange}
                     accent2={rar.color}
-                    full={false}
                     size="sm"
                   >
                     {isFull ? "Full" : "Buy"}
@@ -4338,7 +4369,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
             );
           })
         ) : (
-          <p className="text-slate-500 text-xs text-center mt-10">
+          <p className="text-slate-500 text-xs text-center mt-10 col-span-2">
             {filter} coming soon.
           </p>
         )}
