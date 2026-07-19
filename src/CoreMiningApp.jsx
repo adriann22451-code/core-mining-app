@@ -637,6 +637,11 @@ const FOUNDER_SUPPLY = MAX_SUPPLY * (ALLOCATION_PCT.founder / 100); // 5,000,000
 const TREASURY_TON_ADDRESS = "UQDkQYsWZm8-ib8Vco22U9kKFrPzkTDTFl2D3I3VNGu8K0YT";
 // How much CORE a deposit is credited as, per TON sent. Tune to your economy.
 const DEPOSIT_CORE_PER_TON = 100;
+// Reference TON/USD price used only to show the "≈ $X USD" estimate under
+// the balance — update this if TON's market price moves meaningfully.
+// CORE's USD value is derived from it via the fixed CORE-per-TON ratio
+// above, not set independently.
+const TON_USD_RATE = 5.05;
 const MIN_DEPOSIT_TON = 0.1;
 const QUICK_DEPOSIT_AMOUNTS_TON = [0.5, 1, 2, 5];
 // Withdrawals aren't paid out automatically (no live on-chain CORE token yet
@@ -4130,7 +4135,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
             <span className="text-white text-[26px] leading-none font-extrabold tabular-nums">{fmt(balance)}</span>
             <span className="text-xs font-bold mb-0.5" style={{ color: C.cyan }}>CORE</span>
           </div>
-          <p className="text-slate-500 text-[10px] mt-0.5">≈ ${fmt(balance * 504.6, 2)} USD</p>
+          <p className="text-slate-500 text-[10px] mt-0.5">≈ ${fmt((balance / DEPOSIT_CORE_PER_TON) * TON_USD_RATE, 2)} USD</p>
         </div>
         {boosts.length > 0 && (
           <div className="flex flex-col gap-1 items-end">
