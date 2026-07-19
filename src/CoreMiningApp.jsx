@@ -421,7 +421,7 @@ const BUNDLE_CATALOG = [
     rigKey: "starter",
     componentKey: "rtx5060",
     energyAmount: 100,
-    discountPct: 10,
+    tonPrice: 5,
     desc: "An easy on-ramp — a starter rig, a starter GPU, and a quick energy top-up bundled together.",
   },
   {
@@ -431,7 +431,7 @@ const BUNDLE_CATALOG = [
     rigKey: "pro",
     componentKey: "rtx5080",
     energyAmount: 250,
-    discountPct: 15,
+    tonPrice: 10,
     desc: "A solid mid-tier step up — balanced rig, high-end GPU, and a real energy reserve.",
   },
   {
@@ -441,7 +441,7 @@ const BUNDLE_CATALOG = [
     rigKey: "hyper",
     componentKey: "rtx4090",
     energyAmount: 500,
-    discountPct: 18,
+    tonPrice: 25,
     desc: "Serious hardware for serious output — high-density rig, flagship-class GPU, full energy tank.",
   },
   {
@@ -451,27 +451,30 @@ const BUNDLE_CATALOG = [
     rigKey: "quantum",
     componentKey: "rtx5090",
     energyAmount: 500,
-    discountPct: 20,
+    tonPrice: 50,
     desc: "A flagship rig, a flagship GPU, and a full energy tank — everything you need to jump straight to the top tier in one crate.",
   },
 ];
 
-// Computes a bundle's contents + pricing: normalPrice is the sum of buying
+// Computes a bundle's contents + pricing. normalPrice is the sum of buying
 // the rig, the component, and the energy (priced off the closest energy
-// pack's CORE-per-kWh rate) separately; price is that total after the
-// bundle's discount, rounded to a clean number. tonPrice converts that CORE
-// price to real TON at the fixed DEPOSIT_CORE_PER_TON ratio (100 CORE = 1
-// TON), rounded to the nearest 0.1 TON — this is what actually gets charged
-// via TonConnect (see buyBundle).
+// pack's CORE-per-kWh rate) separately, in CORE. tonPrice is the bundle's
+// fixed real-money price (see BUNDLE_CATALOG above — 5/10/25/50 TON,
+// cheapest to most expensive) — this is what actually gets charged via
+// TonConnect (see buyBundle). price is that TON price converted back to
+// its CORE equivalent at the fixed DEPOSIT_CORE_PER_TON ratio, used only
+// to compute + display the "-X% OFF" savings vs. buying everything
+// separately with CORE.
 function getBundlePricing(bundle) {
   const rig = RIG_CATALOG.find((r) => r.key === bundle.rigKey);
   const comp = COMPONENT_CATALOG.find((c) => c.key === bundle.componentKey);
   const ref = ENERGY_PACK_CATALOG[ENERGY_PACK_CATALOG.length - 1];
   const energyValue = (bundle.energyAmount / ref.amount) * ref.price;
   const normalPrice = Math.round((rig?.baseCost ?? 0) + (comp?.price ?? 0) + energyValue);
-  const price = Math.round((normalPrice * (1 - bundle.discountPct / 100)) / 10) * 10;
-  const tonPrice = Math.max(0.1, Math.round((price / DEPOSIT_CORE_PER_TON) * 10) / 10);
-  return { rig, comp, normalPrice, price, tonPrice };
+  const tonPrice = bundle.tonPrice;
+  const price = Math.round(tonPrice * DEPOSIT_CORE_PER_TON);
+  const discountPct = Math.max(0, Math.round((1 - price / normalPrice) * 100));
+  return { rig, comp, normalPrice, price, tonPrice, discountPct };
 }
 
 // 7-day check-in cycle for the Profile "Daily Bonus" tile. Streak wraps back
@@ -928,7 +931,7 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
 // chest ("Package") as the hero icon, mini icons of exactly what's inside,
 // and a discount ribbon so the deal is obvious before reading any numbers.
 function BundleCard({ bundle, onBuy, disabled, disabledReason, sending }) {
-  const { rig, comp, normalPrice, tonPrice } = getBundlePricing(bundle);
+  const { rig, comp, normalPrice, tonPrice, discountPct } = getBundlePricing(bundle);
   const rar = RARITY_STYLE[bundle.rarity];
   if (!rig || !comp) return null;
   const normalTon = Math.round((normalPrice / DEPOSIT_CORE_PER_TON) * 10) / 10;
@@ -942,7 +945,7 @@ function BundleCard({ bundle, onBuy, disabled, disabledReason, sending }) {
         className="absolute top-3 right-3 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
         style={{ color: "#0A1220", background: rar.color, boxShadow: `0 0 10px -1px ${rar.color}` }}
       >
-        -{bundle.discountPct}% OFF
+        -{discountPct}% OFF
       </span>
 
       <div className="flex items-center gap-3 pr-14">
