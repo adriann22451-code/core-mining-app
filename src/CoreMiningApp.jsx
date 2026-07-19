@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { TonConnectButton, useTonAddress } from "@tonconnect/ui-react";
+import { soundEngine } from "./sound";
 import {
   Home, Store, Package, ArrowUpCircle, User, Zap, Database,
   Gift, Trophy, Users, Target, ChevronLeft, Bell, Settings, Sparkles,
@@ -129,11 +130,26 @@ function useTelegram() {
   }, []);
 
   const haptic = useCallback(
-    (style = "light") => tg?.HapticFeedback?.impactOccurred(style),
+    (style = "light") => {
+      if (tg?.HapticFeedback?.impactOccurred) {
+        tg.HapticFeedback.impactOccurred(style);
+      } else if (navigator.vibrate) {
+        // Outside Telegram (e.g. testing in a regular mobile browser) —
+        // Telegram's HapticFeedback API doesn't exist, so fall back to the
+        // standard Vibration API instead of doing nothing.
+        navigator.vibrate(style === "heavy" ? 35 : style === "medium" ? 20 : 10);
+      }
+    },
     [tg]
   );
   const hapticNotify = useCallback(
-    (type = "success") => tg?.HapticFeedback?.notificationOccurred(type),
+    (type = "success") => {
+      if (tg?.HapticFeedback?.notificationOccurred) {
+        tg.HapticFeedback.notificationOccurred(type);
+      } else if (navigator.vibrate) {
+        navigator.vibrate(type === "error" ? [15, 40, 15] : 15);
+      }
+    },
     [tg]
   );
 
@@ -710,12 +726,14 @@ function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, price
         {chips && chips.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">{chips}</div>
         )}
-        <p className="text-white text-xs font-bold tabular-nums mt-1.5">
+      </div>
+      <div className="shrink-0 flex flex-col items-end gap-1">
+        <p className="text-white text-xs font-bold tabular-nums whitespace-nowrap">
           {price}
           {priceNote && <span className="text-[9px] text-slate-500 font-normal"> {priceNote}</span>}
         </p>
+        {action}
       </div>
-      <div className="shrink-0 flex flex-col items-end gap-1">{action}</div>
     </GlowCard>
   );
 }
@@ -1834,10 +1852,15 @@ export default function CoreMiningApp() {
   const savedGame = savedGameRef.current;
 
   // ---- Settings -------------------------------------------------------------
-  // Music/SFX are stored preferences only (this build has no audio assets
-  // wired up yet) — Vibration and Language are the two that actually do
-  // something: Vibration gates every haptic()/hapticNotify() call below, and
-  // Language is what a future i18n pass would read.
+  // Music/SFX toggles drive the synthesized sound engine (see ./sound.js) —
+  // SFX rides the existing haptic()/hapticNotify() wrappers below, and music
+  // starts on the player's first tap (browsers block audio before a real
+  // user gesture). Vibration gates the same wrappers' haptic calls (with a
+  // navigator.vibrate() fallback outside Telegram). Notifications is synced
+  // to the backend as part of `progress` (see persistRef below) and read by
+  // api/notify-cron.js, which is what actually sends the Telegram bot
+  // messages — this toggle itself does nothing client-side beyond opting
+  // in/out. Language is what a future i18n pass would read.
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [musicOn, setMusicOn] = useState(savedGame.musicOn ?? true);
   const [sfxOn, setSfxOn] = useState(savedGame.sfxOn ?? true);
@@ -1847,9 +1870,29 @@ export default function CoreMiningApp() {
   const t = useCallback(makeTranslator(language), [language]);
   // Wrapping here means every existing haptic("light")/hapticNotify(...)
   // call site elsewhere in the app automatically respects the Vibration
-  // toggle, with no changes needed at each call site.
-  const haptic = useCallback((style) => { if (vibrationOn) hapticRaw(style); }, [vibrationOn, hapticRaw]);
-  const hapticNotify = useCallback((type) => { if (vibrationOn) hapticNotifyRaw(type); }, [vibrationOn, hapticNotifyRaw]);
+  // toggle, with no changes needed at each call site. Sound effects ride
+  // along the same wrappers for the same reason — one place to gate SFX
+  // behind the Settings toggle instead of touching 50+ call sites.
+  const haptic = useCallback((style) => {
+    if (vibrationOn) hapticRaw(style);
+    soundEngine.playSfx(style);
+  }, [vibrationOn, hapticRaw]);
+  const hapticNotify = useCallback((type) => {
+    if (vibrationOn) hapticNotifyRaw(type);
+    soundEngine.playNotify(type);
+  }, [vibrationOn, hapticNotifyRaw]);
+
+  // Keep the sound engine's enabled flags in sync with Settings.
+  useEffect(() => { soundEngine.setSfxEnabled(sfxOn); }, [sfxOn]);
+  useEffect(() => { soundEngine.setMusicEnabled(musicOn); }, [musicOn]);
+  // Browsers block audio until a real user gesture — start music on the
+  // first tap anywhere rather than on mount, so it isn't silently blocked.
+  useEffect(() => {
+    if (!musicOn) return;
+    const startOnce = () => { soundEngine.startMusic(); window.removeEventListener("pointerdown", startOnce); };
+    window.addEventListener("pointerdown", startOnce, { once: true });
+    return () => window.removeEventListener("pointerdown", startOnce);
+  }, [musicOn]);
   const [tab, setTab] = useState("home");
   // NOTE: these used to default to hardcoded "demo showcase" numbers
   // (balance 24.85, level 12, xp 8540, totalEarned 1248.35) so the app never
@@ -2185,6 +2228,7 @@ export default function CoreMiningApp() {
       if (newLevel !== level) {
         setLevel(newLevel);
         notify(`Level up! You're now Level ${newLevel}`);
+        soundEngine.playFanfare();
       }
       return newXp;
     });
@@ -2490,6 +2534,7 @@ export default function CoreMiningApp() {
     addXp(ach.xp);
     setAchievementsClaimed((c) => [...c, ach.key]);
     notify(`+${ach.reward} CORE — ${ach.label} complete`);
+    soundEngine.playFanfare();
   }, [haptic, notify, addXp]);
 
   const closeAchievementsModal = useCallback(() => setShowAchievementsModal(false), []);
@@ -3277,6 +3322,7 @@ export default function CoreMiningApp() {
           language={language}
           onSetLanguage={setLanguage}
           notify={notify}
+          tg={tg}
         />
       )}
 
@@ -5318,8 +5364,122 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, notify, use
 }
 
 // ---------------------------------------------------------------------------
-// SETTINGS
+// LEGAL (Privacy Policy / Terms of Service)
 // ---------------------------------------------------------------------------
+// Real, editable copy instead of a "coming soon" toast. Written to match
+// what this app actually does today (Telegram profile + game-progress
+// storage, optional TON wallet connect with no live withdrawal yet, a
+// virtual in-game currency) — update the specifics (company name, contact,
+// jurisdiction) before shipping, and have it reviewed by a lawyer if CORE
+// ever becomes redeemable for anything of real-world value.
+const LEGAL_CONTENT = {
+  privacy: {
+    titleKey: "settings_privacy",
+    sections: [
+      {
+        heading: { en: "Information we collect", id: "Informasi yang kami kumpulkan" },
+        body: {
+          en: "When you open CORE Miner through Telegram, we receive the basic profile info Telegram shares with Mini Apps (your name and Telegram user ID). We also store your in-game progress (balance, rigs, level, settings) and, if you connect one, your TON wallet address.",
+          id: "Saat kamu membuka CORE Miner lewat Telegram, kami menerima info profil dasar yang dibagikan Telegram ke Mini App (nama dan ID pengguna Telegram kamu). Kami juga menyimpan progres game kamu (saldo, rig, level, pengaturan) dan, jika kamu menyambungkannya, alamat dompet TON kamu.",
+        },
+      },
+      {
+        heading: { en: "How we use it", id: "Bagaimana kami menggunakannya" },
+        body: {
+          en: "This data is used only to save and restore your game progress across sessions, show your position on leaderboards/pools if applicable, and process referral rewards. We do not sell your data to third parties.",
+          id: "Data ini hanya digunakan untuk menyimpan dan memulihkan progres game kamu antar sesi, menampilkan posisi kamu di leaderboard/pool jika berlaku, dan memproses hadiah referral. Kami tidak menjual data kamu ke pihak ketiga.",
+        },
+      },
+      {
+        heading: { en: "Wallet connection", id: "Koneksi dompet" },
+        body: {
+          en: "Connecting a TON wallet is optional and only shares your public wallet address — never your private keys or seed phrase. We never ask for those, and neither should anyone claiming to represent CORE Miner.",
+          id: "Menyambungkan dompet TON bersifat opsional dan hanya membagikan alamat dompet publik kamu — bukan private key atau seed phrase. Kami tidak pernah meminta itu, begitu juga siapa pun yang mengaku mewakili CORE Miner.",
+        },
+      },
+      {
+        heading: { en: "Your choices", id: "Pilihan kamu" },
+        body: {
+          en: "You can disconnect your wallet at any time from the Wallet screen. To request deletion of your saved progress, contact support (below).",
+          id: "Kamu bisa memutus dompet kapan saja dari layar Wallet. Untuk meminta penghapusan progres tersimpan, hubungi dukungan (lihat di bawah).",
+        },
+      },
+    ],
+  },
+  terms: {
+    titleKey: "settings_terms",
+    sections: [
+      {
+        heading: { en: "Virtual currency", id: "Mata uang virtual" },
+        body: {
+          en: "CORE is a virtual in-game currency with no guaranteed real-world monetary value. Balances shown in the app do not represent a deposit, security, or financial instrument of any kind.",
+          id: "CORE adalah mata uang virtual dalam game tanpa jaminan nilai moneter dunia nyata. Saldo yang ditampilkan di aplikasi bukan merupakan simpanan, sekuritas, atau instrumen keuangan dalam bentuk apa pun.",
+        },
+      },
+      {
+        heading: { en: "Fair play", id: "Bermain adil" },
+        body: {
+          en: "Botting, exploiting bugs, or using multiple accounts to farm referral rewards may result in progress being reset or access being revoked.",
+          id: "Penggunaan bot, eksploitasi bug, atau memakai banyak akun untuk memanfaatkan hadiah referral dapat mengakibatkan progres direset atau akses dicabut.",
+        },
+      },
+      {
+        heading: { en: "No guarantees", id: "Tanpa jaminan" },
+        body: {
+          en: "The app is provided \"as is\" during active development. Features, rates, and prices shown may change as the game is balanced and updated.",
+          id: "Aplikasi disediakan \"apa adanya\" selama masa pengembangan aktif. Fitur, rate, dan harga yang ditampilkan bisa berubah seiring penyeimbangan dan pembaruan game.",
+        },
+      },
+      {
+        heading: { en: "Contact", id: "Kontak" },
+        body: {
+          en: "Questions about these terms can be sent through Help & Support.",
+          id: "Pertanyaan seputar ketentuan ini bisa dikirim lewat Bantuan & Dukungan.",
+        },
+      },
+    ],
+  },
+};
+
+function LegalModal({ kind, onClose }) {
+  const { t, language } = useLanguage();
+  const content = LEGAL_CONTENT[kind];
+  const lang = (k) => k[language] || k.en;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+      style={{ background: "rgba(3,5,10,0.72)" }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" onClick={(e) => e.stopPropagation()}>
+        <GlowCard accent={C.cyan} brackets className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              {kind === "privacy" ? <ShieldCheck size={16} color={C.cyan} /> : <FileText size={16} color={C.cyan} />}
+              <h2 className="text-white font-extrabold text-sm tracking-wide">{t(content.titleKey)}</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
+          <div className="flex flex-col gap-3.5">
+            {content.sections.map((s, i) => (
+              <div key={i}>
+                <p className="text-white text-xs font-bold mb-1">{lang(s.heading)}</p>
+                <p className="text-slate-400 text-[11px] leading-relaxed">{lang(s.body)}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-[10px] text-slate-600 mt-4">
+            {language === "id" ? "Terakhir diperbarui" : "Last updated"}: 2026
+          </p>
+        </GlowCard>
+      </div>
+    </div>
+  );
+}
+
 const SETTINGS_LANGUAGES = [
   { code: "en", label: "English" },
   { code: "id", label: "Bahasa Indonesia" },
@@ -5342,10 +5502,18 @@ function SettingsModal({
   language,
   onSetLanguage,
   notify,
+  tg,
 }) {
   const { t } = useLanguage();
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [legalModal, setLegalModal] = useState(null); // "privacy" | "terms" | null
   const currentLang = SETTINGS_LANGUAGES.find((l) => l.code === language) || SETTINGS_LANGUAGES[0];
+
+  const openSupport = () => {
+    const url = `https://t.me/${BOT_USERNAME}`;
+    if (tg?.openTelegramLink) tg.openTelegramLink(url);
+    else window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div
@@ -5415,23 +5583,24 @@ function SettingsModal({
             <SettingsLinkRow
               icon={HelpCircle}
               label={t("settings_help")}
-              onClick={() => notify(t("settings_help_toast"))}
+              onClick={openSupport}
             />
             <SettingsLinkRow
               icon={ShieldCheck}
               label={t("settings_privacy")}
-              onClick={() => notify(t("settings_privacy_toast"))}
+              onClick={() => setLegalModal("privacy")}
             />
             <SettingsLinkRow
               icon={FileText}
               label={t("settings_terms")}
-              onClick={() => notify(t("settings_terms_toast"))}
+              onClick={() => setLegalModal("terms")}
             />
           </div>
 
           <p className="text-center text-[10px] text-slate-600 mt-4">CORE Miner v1.19</p>
         </GlowCard>
       </div>
+      {legalModal && <LegalModal kind={legalModal} onClose={() => setLegalModal(null)} />}
     </div>
   );
 }
