@@ -4011,7 +4011,7 @@ export default function CoreMiningApp() {
         />
       )}
 
-      <div className="relative z-10 flex-1 overflow-y-auto pb-20">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col overflow-y-auto pb-20">
         {tab === "home" && (
           <HomeTab
             balance={balance}
@@ -4233,7 +4233,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
   const energyColor = energy <= 0 ? "#FF7A7A" : energyPct <= 0.25 ? C.orange : C.green;
 
   return (
-    <div className="flex flex-col h-full px-4 pt-3">
+    <div className="flex flex-col flex-1 min-h-0 px-4 pt-3">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -5601,7 +5601,7 @@ function InboxModal({ onClose, items, onClaim }) {
   const sorted = [...items].sort((a, b) => b.ts - a.ts);
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
