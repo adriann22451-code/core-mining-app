@@ -3788,6 +3788,10 @@ export default function CoreMiningApp() {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.55; }
           50% { transform: translateX(-50%) scale(0.85); opacity: 0.85; }
         }
+        @keyframes core-claim-glow {
+          0%, 100% { opacity: 0.35; transform: scale(1); }
+          50% { opacity: 0.65; transform: scale(1.04); }
+        }
         @keyframes core-turntable {
           0% { transform: rotateX(38deg) rotateZ(-32deg); }
           100% { transform: rotateX(38deg) rotateZ(328deg); }
@@ -4227,7 +4231,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="flex-1 min-h-0 mt-3 relative">
+      <div className="flex-1 min-h-0 mt-3 relative" style={{ minHeight: "44vh" }}>
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
@@ -4265,33 +4269,39 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         )}
       </div>
 
-      {/* Mining power + income, merged into one card */}
-      <div className="shrink-0 mt-2.5">
-        <GlowCard accent={C.cyan} className="px-3 py-2">
-          <div className="grid grid-cols-2 divide-x" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-            <div>
-              <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
-                <Gauge size={12} /> Mining Power
+      {/* Mining power + income, merged into one compact, color-coded card */}
+      <div className="shrink-0 mt-2">
+        <GlowCard accent={C.cyan} className="p-1">
+          <div className="grid grid-cols-2 gap-1">
+            <div
+              className="rounded-xl px-2.5 py-1.5"
+              style={{ background: `linear-gradient(135deg, ${C.cyan}22, transparent)` }}
+            >
+              <div className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: `${C.cyan}CC` }}>
+                <Gauge size={11} /> POWER
               </div>
-              <p className="text-white font-bold text-sm tabular-nums">{fmt(miningPower)} TH/s</p>
+              <p className="text-white font-extrabold text-[13px] tabular-nums leading-tight">{fmt(miningPower)} <span className="text-[9px] font-semibold text-slate-400">TH/s</span></p>
             </div>
-            <div className="pl-3">
-              <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
-                <Coins size={12} /> Income / Hour
+            <div
+              className="rounded-xl px-2.5 py-1.5"
+              style={{ background: `linear-gradient(135deg, ${C.green}22, transparent)` }}
+            >
+              <div className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: `${C.green}CC` }}>
+                <Coins size={11} /> INCOME/HR
               </div>
-              <p className="text-white font-bold text-sm tabular-nums">{fmt(incomePerHour)} CORE</p>
+              <p className="text-white font-extrabold text-[13px] tabular-nums leading-tight">{fmt(incomePerHour)} <span className="text-[9px] font-semibold text-slate-400">CORE</span></p>
             </div>
           </div>
         </GlowCard>
       </div>
 
       {/* Pool status + network, one tappable strip */}
-      <button className="shrink-0 mt-2 w-full text-left" onClick={onOpenNetwork}>
+      <button className="shrink-0 mt-1.5 w-full text-left" onClick={onOpenNetwork}>
         <div
-          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[10px] font-semibold"
+          className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-[10px] font-semibold"
           style={{
-            background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 100%)",
-            border: `1px solid ${C.blue}33`,
+            background: `linear-gradient(100deg, ${C.purple}2A 0%, ${C.blue}1F 55%, #0A0F1E 100%)`,
+            border: `1px solid ${C.purple}44`,
           }}
         >
           <span className="flex items-center gap-1.5 text-slate-300 truncate">
@@ -4310,16 +4320,36 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       </button>
 
       {/* Claim */}
-      <div className="shrink-0 mt-2.5 pb-2">
+      <div className="shrink-0 mt-2 pb-2">
         <div className="flex items-center justify-between mb-1.5 px-0.5">
           <span className="text-[11px] text-slate-400 tracking-wide">Ready to claim</span>
           <span className="text-sm font-extrabold tabular-nums" style={{ color: C.green }}>
             +{fmt(pending, 4)} CORE
           </span>
         </div>
-        <FuturisticButton onClick={onClaim} accent={C.cyan} accent2={C.blue}>
-          Claim Reward
-        </FuturisticButton>
+        <div className="relative">
+          <div
+            aria-hidden
+            className="absolute -inset-1.5 rounded-2xl pointer-events-none"
+            style={{
+              background: `linear-gradient(100deg, ${C.cyan}, ${C.green}, ${C.cyan})`,
+              filter: "blur(10px)",
+              animation: "core-claim-glow 2.2s ease-in-out infinite",
+            }}
+          />
+          <button
+            onClick={onClaim}
+            className="relative w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-extrabold uppercase tracking-widest text-[13px] active:scale-[0.97] transition-transform"
+            style={{
+              background: `linear-gradient(115deg, ${C.cyan} 0%, ${C.green} 100%)`,
+              color: "#04070E",
+              boxShadow: `0 6px 20px -4px ${C.green}88, 0 0 0 1px rgba(255,255,255,0.15) inset`,
+            }}
+          >
+            <Coins size={17} />
+            Claim Reward
+          </button>
+        </div>
       </div>
 
       {showEnergyModal && (
