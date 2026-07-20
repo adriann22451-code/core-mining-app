@@ -2707,15 +2707,6 @@ export default function CoreMiningApp() {
   const [inboxItems, setInboxItems] = useState(
     savedGame.inboxItems ?? [
       {
-        id: "welcome",
-        title: "Welcome to CORE",
-        body: "Thanks for joining — here's a starter bonus to help your first rig run longer.",
-        reward: { core: 2, energy: 5 },
-        read: false,
-        claimed: false,
-        ts: Date.now(),
-      },
-      {
         id: "weekend_event",
         title: "Weekend Boost Event",
         body: "Mining income is boosted across the network this weekend. Claim your event bonus before it ends.",
@@ -2739,7 +2730,10 @@ export default function CoreMiningApp() {
     const item = inboxItems.find((n) => n.id === id);
     if (!item || item.claimed || !item.reward) return;
     haptic("medium");
-    if (item.reward.core) setBalance((b) => b + item.reward.core);
+    if (item.reward.core) {
+      setBalance((b) => b + item.reward.core);
+      setTotalEarned((t) => t + item.reward.core);
+    }
     if (item.reward.energy) setEnergy((e) => Math.min(MAX_ENERGY_KWH, e + item.reward.energy));
     setInboxItems((items) => items.map((n) => (n.id === id ? { ...n, claimed: true, read: true } : n)));
     notify(`Claimed ${[item.reward.core ? `${fmt(item.reward.core)} CORE` : null, item.reward.energy ? `${item.reward.energy} kWh` : null].filter(Boolean).join(" + ")}`);
@@ -2993,8 +2987,22 @@ export default function CoreMiningApp() {
     if (welcomeGrantClaimed) return;
     const promoActive = Date.now() < WELCOME_PROMO_END;
     if (promoActive) {
-      setBalance((b) => b + WELCOME_GRANT_CORE);
-      setTotalEarned((t) => t + WELCOME_GRANT_CORE);
+      // Promo CORE no longer auto-credits to balance — it's handed to the
+      // player as a claimable Inbox message instead, so it survives past
+      // the opening pop-up and the player has to actively claim it (same
+      // pattern as claimInboxReward for any other Inbox reward).
+      setInboxItems((items) => [
+        {
+          id: "welcome_core_grant",
+          title: "New Miner Bonus",
+          body: `Thanks for joining CORE! Claim your +${WELCOME_GRANT_CORE} CORE new-player bonus below. This offer is only available for new accounts during the current launch promo.`,
+          reward: { core: WELCOME_GRANT_CORE },
+          read: false,
+          claimed: false,
+          ts: Date.now(),
+        },
+        ...items,
+      ]);
     }
     setEnergy(NEW_MINER_START_ENERGY_KWH);
     const starter = RIG_CATALOG.find((r) => r.key === "starter");
@@ -3017,7 +3025,7 @@ export default function CoreMiningApp() {
     setWelcomeGrantClaimed(true);
     notify(
       promoActive
-        ? `Welcome! +${WELCOME_GRANT_CORE} CORE, a free Starter Rig & ${NEW_MINER_START_ENERGY_KWH} kWh energy — New Miner Boost active for 48h`
+        ? `Welcome! Check your Inbox to claim your CORE bonus — plus a free Starter Rig & ${NEW_MINER_START_ENERGY_KWH} kWh energy. New Miner Boost active for 48h`
         : `Welcome! A free Starter Rig & ${NEW_MINER_START_ENERGY_KWH} kWh energy — New Miner Boost active for 48h`
     );
   }, [welcomeGrantClaimed, notify]);
