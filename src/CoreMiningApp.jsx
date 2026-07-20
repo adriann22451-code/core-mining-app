@@ -1951,6 +1951,30 @@ function RigDevice({ rig, fill = false }) {
 
 // Home tab hero: shows a real photo of the player's best owned rig (falls
 // back to the CSS chassis illustration if no rig is owned / has no image).
+class RigHeroErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "#300", color: "#FF6666", fontSize: 11, padding: 8, overflow: "auto", fontFamily: "monospace", zIndex: 999 }}>
+          RIGHERO CRASHED:
+          <br />
+          {String(this.state.error && this.state.error.message)}
+          <br />
+          {String(this.state.error && this.state.error.stack).slice(0, 500)}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function RigHero({ rig, fill = false }) {
   const photo = rig ? ASSET_URLS.rigs[rig.key] : null;
   const rar = rig ? RARITY_STYLE[rig.rarity] : RARITY_STYLE.common;
@@ -4298,10 +4322,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="relative mt-2" style={{ height: "40vh", minHeight: "260px", flexShrink: 0, background: "#FF00FF", border: "4px solid yellow" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, color: "#000", background: "#FF0", fontWeight: 900, fontSize: 14, padding: 4, zIndex: 999 }}>
-          DEBUG BOX — kalau ini besar berarti container OK
-        </div>
+      <div className="relative mt-2" style={{ height: "40vh", minHeight: "260px", flexShrink: 0 }}>
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
@@ -4312,7 +4333,9 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
             onTouchEnd={onHeroTouchEnd}
             className="absolute inset-2"
           >
-            <RigHero rig={currentRig} fill />
+            <RigHeroErrorBoundary>
+              <RigHero rig={currentRig} fill />
+            </RigHeroErrorBoundary>
           </div>
         </GlowCard>
         {heroList.length > 1 && (
