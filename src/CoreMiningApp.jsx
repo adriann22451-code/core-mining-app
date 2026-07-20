@@ -4,8 +4,8 @@ import { soundEngine } from "./sound";
 import {
   Home, Store, Package, ArrowUpCircle, User, Zap, Database,
   Gift, Trophy, Users, Target, ChevronLeft, Bell, Settings, Sparkles,
-  Gauge, ShieldCheck, Flame, Coins, Check, X, Boxes,
-  Search, Wrench, Star, Plus, Volume2, Vibrate, Globe, ChevronDown,
+  Gauge, ShieldCheck, Flame, Coins, Check, X, Boxes, BatteryMedium,
+  Search, Wrench, Star, Plus, Volume2, Vibrate, Globe, ChevronDown, ChevronRight,
   HelpCircle, FileText, Music, ArrowUpDown, Cpu,
   ArrowDownToLine, ArrowUpFromLine, Loader2, CheckCircle2, Wallet
 } from "lucide-react";
@@ -1832,6 +1832,29 @@ function RigDevice({ rig, fill = false }) {
         className="absolute inset-0"
         style={{ background: `radial-gradient(circle at 50% 78%, ${glowColor}${filled.length ? "33" : "1A"}, transparent 60%)` }}
       />
+      {/* glowing floor the chassis appears to hover above */}
+      <div
+        className="absolute left-1/2 bottom-[14%] pointer-events-none"
+        style={{
+          width: "48%",
+          height: "12px",
+          borderRadius: "50%",
+          background: `radial-gradient(ellipse, ${glowColor}${filled.length ? "AA" : "66"} 0%, ${glowColor}44 45%, transparent 75%)`,
+          filter: "blur(2px)",
+          animation: `core-floor-glow ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
+        }}
+      />
+      <div
+        className="absolute left-1/2 -translate-x-1/2 bottom-[14%] pointer-events-none"
+        style={{
+          width: "32%",
+          height: "3px",
+          borderRadius: "50%",
+          background: glowColor,
+          boxShadow: `0 0 10px 2px ${glowColor}`,
+          opacity: filled.length ? 0.9 : 0.5,
+        }}
+      />
       {/* Outer wrapper handles the up/down hover-float; inner wrapper spins
           independently so the two motions don't fight over `transform`. */}
       <div
@@ -1947,6 +1970,29 @@ function RigHero({ rig, fill = false }) {
       <div
         className="absolute inset-0"
         style={{ background: `radial-gradient(circle at 50% 40%, ${rar.color}22, #05070E 75%)` }}
+      />
+      {/* glowing floor the rig appears to hover above */}
+      <div
+        className="absolute left-1/2 bottom-[18%] pointer-events-none"
+        style={{
+          width: "58%",
+          height: "14px",
+          borderRadius: "50%",
+          background: `radial-gradient(ellipse, ${rar.color}AA 0%, ${rar.color}44 45%, transparent 75%)`,
+          filter: "blur(2px)",
+          animation: "core-floor-glow 3.6s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="absolute left-1/2 -translate-x-1/2 bottom-[18%] pointer-events-none"
+        style={{
+          width: "40%",
+          height: "3px",
+          borderRadius: "50%",
+          background: rar.color,
+          boxShadow: `0 0 12px 2px ${rar.color}`,
+          opacity: 0.9,
+        }}
       />
       <img
         src={photo}
@@ -3738,6 +3784,10 @@ export default function CoreMiningApp() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
+        @keyframes core-floor-glow {
+          0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.55; }
+          50% { transform: translateX(-50%) scale(0.85); opacity: 0.85; }
+        }
         @keyframes core-turntable {
           0% { transform: rotateX(38deg) rotateZ(-32deg); }
           100% { transform: rotateX(38deg) rotateZ(328deg); }
@@ -4060,7 +4110,6 @@ export default function CoreMiningApp() {
         <NavItem navKey="pools" icon={Users} label={t("nav_pools")} active={tab === "pools"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("pools"); }} />
         <NavItem navKey="inventory" icon={Package} label={t("nav_inventory")} active={tab === "inventory"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("inventory"); }} />
         <NavItem navKey="marketplace" icon={Boxes} label={t("nav_marketplace")} active={tab === "marketplace"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("marketplace"); }} />
-        <NavItem navKey="profile" icon={User} label={t("nav_profile")} active={tab === "profile"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("profile"); }} />
       </div>
     </div>
     </LanguageContext.Provider>
@@ -4071,11 +4120,29 @@ export default function CoreMiningApp() {
 // HOME
 // ---------------------------------------------------------------------------
 function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, networkActiveMiners, onOpenNetwork, user, onOpenProfile }) {
+  const [showEnergyModal, setShowEnergyModal] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
   const boosterMinsLeft = activeBooster ? Math.max(0, Math.round((activeBooster.expiresAt - nowTick) / 60000)) : 0;
-  const autoTopRig = owned && owned.length
-    ? [...owned].sort((a, b) => b.basePower * (1 + (b.level - 1) * 0.18) - a.basePower * (1 + (a.level - 1) * 0.18))[0]
-    : null;
+  const powerOf = (r) => r.basePower * (1 + (r.level - 1) * 0.18);
+  const autoTopRig = owned && owned.length ? [...owned].sort((a, b) => powerOf(b) - powerOf(a))[0] : null;
   const topRig = (featuredRigId && owned?.find((r) => r.id === featuredRigId)) || autoTopRig;
+  // Carousel list: featured/best rig first, then the rest by power — so the
+  // default view (index 0) matches the old single-rig behavior, but a swipe
+  // reveals the whole collection without leaving the home tab.
+  const heroList = owned && owned.length
+    ? [topRig, ...[...owned].filter((r) => r.id !== topRig?.id).sort((a, b) => powerOf(b) - powerOf(a))].filter(Boolean)
+    : [];
+  const safeHeroIndex = heroList.length ? Math.min(heroIndex, heroList.length - 1) : 0;
+  const currentRig = heroList[safeHeroIndex] || null;
+  const heroTouchRef = useRef(null);
+  const onHeroTouchStart = (e) => { heroTouchRef.current = e.touches[0].clientX; };
+  const onHeroTouchEnd = (e) => {
+    if (heroTouchRef.current == null || heroList.length < 2) return;
+    const delta = e.changedTouches[0].clientX - heroTouchRef.current;
+    heroTouchRef.current = null;
+    if (delta > 40) setHeroIndex((i) => (i - 1 + heroList.length) % heroList.length);
+    else if (delta < -40) setHeroIndex((i) => (i + 1) % heroList.length);
+  };
   // Energy pool is denominated in real kWh (see MAX_ENERGY_KWH), and
   // energyDrainPerHour is already the sum of every active rig's real `kwh`
   // draw — so the bar's own number IS the real-world-equivalent draw now,
@@ -4101,6 +4168,8 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       text: `+${activeBooster.boostPct}% · ${boosterMinsLeft}m`,
     },
   ].filter(Boolean);
+  const energyPct = MAX_ENERGY_KWH > 0 ? energy / MAX_ENERGY_KWH : 0;
+  const energyColor = energy <= 0 ? "#FF7A7A" : energyPct <= 0.25 ? C.orange : C.green;
 
   return (
     <div className="h-full flex flex-col px-4 pt-3">
@@ -4111,6 +4180,9 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
           <span className="text-white font-extrabold tracking-widest text-sm">CORE</span>
         </div>
         <div className="flex items-center gap-3 text-slate-400">
+          <button onClick={() => setShowEnergyModal(true)} aria-label="Open energy" className="relative">
+            <BatteryMedium size={18} color={energyColor} style={{ filter: `drop-shadow(0 0 5px ${energyColor}88)` }} />
+          </button>
           <Bell size={17} />
           <button onClick={onOpenProfile} aria-label="Open profile">
             <div
@@ -4152,30 +4224,64 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         )}
       </div>
 
-      {/* Rig visual — the hero, gets whatever space is left */}
-      <div className="flex-1 min-h-0 mt-3">
+      {/* Rig visual — the hero, gets whatever space is left. Swipeable when
+          more than one rig is owned so the full collection is reachable
+          without leaving the home tab. */}
+      <div className="flex-1 min-h-0 mt-3 relative">
         <GlowCard
-          accent={topRig ? RARITY_STYLE[topRig.rarity].color : C.blue}
+          accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
           className="p-2 h-full"
         >
-          <RigHero rig={topRig} fill />
+          <div onTouchStart={onHeroTouchStart} onTouchEnd={onHeroTouchEnd} className="h-full">
+            <RigHero rig={currentRig} fill />
+          </div>
         </GlowCard>
+        {heroList.length > 1 && (
+          <>
+            <button
+              aria-label="Previous rig"
+              onClick={() => setHeroIndex((i) => (i - 1 + heroList.length) % heroList.length)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(5,7,14,0.6)", border: "1px solid rgba(255,255,255,0.12)" }}
+            >
+              <ChevronLeft size={16} color="#CBD5E1" />
+            </button>
+            <button
+              aria-label="Next rig"
+              onClick={() => setHeroIndex((i) => (i + 1) % heroList.length)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(5,7,14,0.6)", border: "1px solid rgba(255,255,255,0.12)" }}
+            >
+              <ChevronRight size={16} color="#CBD5E1" />
+            </button>
+            <div
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-semibold tabular-nums"
+              style={{ background: "rgba(5,7,14,0.75)", border: "1px solid rgba(255,255,255,0.12)", color: "#CBD5E1" }}
+            >
+              {safeHeroIndex + 1} / {heroList.length}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Mining power / income */}
-      <div className="shrink-0 mt-2.5 grid grid-cols-2 gap-2">
+      {/* Mining power + income, merged into one card */}
+      <div className="shrink-0 mt-2.5">
         <GlowCard accent={C.cyan} className="px-3 py-2">
-          <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
-            <Gauge size={12} /> Mining Power
+          <div className="grid grid-cols-2 divide-x" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+            <div>
+              <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
+                <Gauge size={12} /> Mining Power
+              </div>
+              <p className="text-white font-bold text-sm tabular-nums">{fmt(miningPower)} TH/s</p>
+            </div>
+            <div className="pl-3">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
+                <Coins size={12} /> Income / Hour
+              </div>
+              <p className="text-white font-bold text-sm tabular-nums">{fmt(incomePerHour)} CORE</p>
+            </div>
           </div>
-          <p className="text-white font-bold text-sm tabular-nums">{fmt(miningPower)} TH/s</p>
-        </GlowCard>
-        <GlowCard accent={C.green} className="px-3 py-2">
-          <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-0.5">
-            <Coins size={12} /> Income / Hour
-          </div>
-          <p className="text-white font-bold text-sm tabular-nums">{fmt(incomePerHour)} CORE</p>
         </GlowCard>
       </div>
 
@@ -4203,9 +4309,54 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         </div>
       </button>
 
-      {/* Energy + storage, compact */}
-      <div className="shrink-0 mt-2">
-        <GlowCard accent={C.orange} className="px-3 py-2">
+      {/* Claim */}
+      <div className="shrink-0 mt-2.5 pb-2">
+        <div className="flex items-center justify-between mb-1.5 px-0.5">
+          <span className="text-[11px] text-slate-400 tracking-wide">Ready to claim</span>
+          <span className="text-sm font-extrabold tabular-nums" style={{ color: C.green }}>
+            +{fmt(pending, 4)} CORE
+          </span>
+        </div>
+        <FuturisticButton onClick={onClaim} accent={C.cyan} accent2={C.blue}>
+          Claim Reward
+        </FuturisticButton>
+      </div>
+
+      {showEnergyModal && (
+        <EnergyModal
+          onClose={() => setShowEnergyModal(false)}
+          energy={energy}
+          energyHoursLeft={energyHoursLeft}
+          activeOwnedRigs={activeOwnedRigs}
+          storage={storage}
+          pending={pending}
+          storageCap={storageCap}
+        />
+      )}
+    </div>
+  );
+}
+
+// Energy + storage detail, now a popup (opened via the header battery icon)
+// instead of a fixed card, so the rig hero above can use the freed-up space.
+function EnergyModal({ onClose, energy, energyHoursLeft, activeOwnedRigs, storage, pending, storageCap }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-[380px]" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
+        <GlowCard accent={C.orange} brackets className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <BatteryMedium size={16} color={C.orange} />
+              <h2 className="text-white font-extrabold text-sm tracking-wide">ENERGY & STORAGE</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
           <StatBar label="ENERGY" value={energy} max={MAX_ENERGY_KWH} color={C.orange} suffix=" kWh" />
           <p className="text-[10px] text-slate-500 -mt-2 mb-2">
             {energyHoursLeft == null
@@ -4229,19 +4380,6 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
             </p>
           )}
         </GlowCard>
-      </div>
-
-      {/* Claim */}
-      <div className="shrink-0 mt-2.5 pb-2">
-        <div className="flex items-center justify-between mb-1.5 px-0.5">
-          <span className="text-[11px] text-slate-400 tracking-wide">Ready to claim</span>
-          <span className="text-sm font-extrabold tabular-nums" style={{ color: C.green }}>
-            +{fmt(pending, 4)} CORE
-          </span>
-        </div>
-        <FuturisticButton onClick={onClaim} accent={C.cyan} accent2={C.blue}>
-          Claim Reward
-        </FuturisticButton>
       </div>
     </div>
   );
