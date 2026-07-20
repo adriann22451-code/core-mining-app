@@ -4298,7 +4298,10 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="relative mt-2" style={{ height: "40vh", minHeight: "260px", flexShrink: 0 }}>
+      <div className="relative mt-2" style={{ height: "40vh", minHeight: "260px", flexShrink: 0, background: "#FF00FF", border: "4px solid yellow" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, color: "#000", background: "#FF0", fontWeight: 900, fontSize: 14, padding: 4, zIndex: 999 }}>
+          DEBUG BOX — kalau ini besar berarti container OK
+        </div>
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
