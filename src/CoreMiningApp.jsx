@@ -7,7 +7,7 @@ import {
   Gauge, ShieldCheck, Flame, Coins, Check, X, Boxes, BatteryMedium,
   Search, Wrench, Star, Plus, Volume2, Vibrate, Globe, ChevronDown, ChevronRight,
   HelpCircle, FileText, Music, ArrowUpDown, Cpu,
-  ArrowDownToLine, ArrowUpFromLine, Loader2, CheckCircle2, Wallet
+  ArrowDownToLine, ArrowUpFromLine, Loader2, CheckCircle2, Wallet, Lock
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -53,6 +53,7 @@ const TRANSLATIONS = {
   nav_profile: { en: "Profile", id: "Profil", ru: "Профиль", zh: "个人资料" },
   nav_pools: { en: "Pools", id: "Pool", ru: "Пулы", zh: "矿池" },
   nav_marketplace: { en: "Marketplace", id: "Bursa", ru: "Барахолка", zh: "交易市场" },
+  nav_staking: { en: "Staking", id: "Staking", ru: "Стейкинг", zh: "质押" },
 
   // Common / buttons
   common_close: { en: "Close", id: "Tutup", ru: "Закрыть", zh: "关闭" },
@@ -4290,6 +4291,7 @@ export default function CoreMiningApp() {
             onBack={() => { haptic("light"); setTab("home"); }}
           />
         )}
+        {tab === "staking" && <StakingTab balance={balance} />}
         {showSellModal && (
           <SellItemModal
             owned={owned}
@@ -4351,6 +4353,7 @@ export default function CoreMiningApp() {
         <NavItem navKey="pools" icon={Users} label={t("nav_pools")} active={tab === "pools"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("pools"); }} />
         <NavItem navKey="inventory" icon={Package} label={t("nav_inventory")} active={tab === "inventory"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("inventory"); }} />
         <NavItem navKey="marketplace" icon={Boxes} label={t("nav_marketplace")} active={tab === "marketplace"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("marketplace"); }} />
+        <NavItem navKey="staking" icon={Lock} label={t("nav_staking")} active={tab === "staking"} onClick={() => { haptic("light"); setSelectedRigId(null); setTab("staking"); }} />
       </div>
     </div>
     </LanguageContext.Provider>
@@ -4641,6 +4644,10 @@ function EnergyModal({ onClose, energy, energyHoursLeft, activeOwnedRigs, storag
     >
       <div className="w-full max-w-[380px]" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
         <GlowCard accent={C.orange} brackets className="p-4">
+          <div
+            className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+            style={{ background: `linear-gradient(90deg, transparent, ${C.orange}cc, transparent)` }}
+          />
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <BatteryMedium size={16} color={C.orange} />
@@ -5200,6 +5207,74 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
             {filter} coming soon.
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// STAKING (placeholder tab — UI only, staking is not live yet. Both options
+// render locked/disabled so nothing here can actually be tapped through to
+// a real staking flow until that's built.)
+// ---------------------------------------------------------------------------
+const STAKING_OPTIONS = [
+  { key: "core", label: "Stake CORE", desc: "Lock your CORE balance to earn passive yield on top of mining.", color: C.cyan, icon: Coins },
+  { key: "ton", label: "Stake TON", desc: "Stake TON from your connected wallet to earn rewards.", color: C.blue, icon: Wallet },
+];
+
+function StakingTab({ balance }) {
+  return (
+    <div>
+      <TopBar title="Staking" right={<Lock size={17} />} />
+
+      <div className="px-4 mt-2">
+        <GlowCard accent={C.purple} className="p-4">
+          <p className="text-white text-xs font-bold mb-1">Coming soon</p>
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Staking isn't live yet — lock CORE or TON here to earn passive rewards once it launches.
+          </p>
+        </GlowCard>
+      </div>
+
+      <div className="px-4 mt-4 flex flex-col gap-3 pb-6">
+        {STAKING_OPTIONS.map((opt) => (
+          <GlowCard key={opt.key} accent={opt.color} brackets className="p-4">
+            <div
+              className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+              style={{ background: `linear-gradient(90deg, transparent, ${opt.color}cc, transparent)` }}
+            />
+            <div className="flex items-center gap-3">
+              <div className="w-[50px] shrink-0">
+                <ItemShowcase accent={opt.color} height={50}>
+                  <opt.icon size={22} color={opt.color} />
+                </ItemShowcase>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-white text-sm font-bold">{opt.label}</p>
+                  <Chip color="#8FA3B8">SOON</Chip>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">{opt.desc}</p>
+              </div>
+            </div>
+            <div
+              className="flex items-center justify-between mt-3 pt-3"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+            >
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                <span>APR</span>
+                <span className="text-white font-semibold tabular-nums">—</span>
+              </div>
+              <button
+                disabled
+                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-not-allowed"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid #2a3346", color: "#5B6B82" }}
+              >
+                <Lock size={12} /> Locked
+              </button>
+            </div>
+          </GlowCard>
+        ))}
       </div>
     </div>
   );
@@ -5805,48 +5880,49 @@ function InboxModal({ onClose, items, onClaim }) {
             <p className="text-[12px] text-slate-500 text-center py-8">No messages yet.</p>
           ) : (
             <div className="flex flex-col gap-2 overflow-y-auto min-h-0 pr-1">
-              {sorted.map((item) => (
-                <div
-                  key={item.id}
-                  className="relative rounded-xl p-3"
-                  style={{
-                    background: item.read
-                      ? "linear-gradient(160deg, rgba(255,255,255,0.03), rgba(10,14,24,0.9))"
-                      : `linear-gradient(160deg, ${C.cyan}18, rgba(10,14,24,0.92))`,
-                    border: `1px solid ${item.read ? "#1c2536" : `${C.cyan}55`}`,
-                  }}
-                >
-                  {!item.read && (
-                    <span
-                      className="absolute top-3 right-3 w-2 h-2 rounded-full"
-                      style={{ background: C.cyan, boxShadow: `0 0 6px 1px ${C.cyan}` }}
+              {sorted.map((item) => {
+                const accent = item.read ? "#3a4658" : C.cyan;
+                return (
+                  <GlowCard key={item.id} accent={accent} brackets className="p-3">
+                    <div
+                      className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+                      style={{ background: `linear-gradient(90deg, transparent, ${accent}cc, transparent)` }}
                     />
-                  )}
-                  <p className="text-white text-[12px] font-bold pr-4">{item.title}</p>
-                  <p className="text-slate-400 text-[11px] mt-1 leading-snug">{item.body}</p>
+                    {!item.read && (
+                      <span
+                        className="absolute top-3 right-3 w-2 h-2 rounded-full"
+                        style={{ background: C.cyan, boxShadow: `0 0 6px 1px ${C.cyan}` }}
+                      />
+                    )}
+                    <p className="text-white text-[12px] font-bold pr-4">{item.title}</p>
+                    <p className="text-slate-400 text-[11px] mt-1 leading-snug">{item.body}</p>
 
-                  {item.reward && (
-                    <div className="flex items-center justify-between mt-2.5">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold" style={{ color: C.green }}>
-                        {item.reward.core > 0 && <span>+{fmt(item.reward.core)} CORE</span>}
-                        {item.reward.energy > 0 && <span style={{ color: C.orange }}>+{item.reward.energy} kWh</span>}
-                      </div>
-                      <button
-                        onClick={() => onClaim(item.id)}
-                        disabled={item.claimed}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wide"
-                        style={
-                          item.claimed
-                            ? { background: "rgba(255,255,255,0.05)", color: "#5B6B82" }
-                            : { background: `linear-gradient(135deg, ${C.cyan}, ${C.green})`, color: "#04121A" }
-                        }
+                    {item.reward && (
+                      <div
+                        className="flex items-center justify-between mt-2.5 pt-2.5"
+                        style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
                       >
-                        {item.claimed ? "Claimed" : "Claim"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                        <div className="flex items-center gap-2 text-[10px] font-semibold" style={{ color: C.green }}>
+                          {item.reward.core > 0 && <span>+{fmt(item.reward.core)} CORE</span>}
+                          {item.reward.energy > 0 && <span style={{ color: C.orange }}>+{item.reward.energy} kWh</span>}
+                        </div>
+                        <button
+                          onClick={() => onClaim(item.id)}
+                          disabled={item.claimed}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wide"
+                          style={
+                            item.claimed
+                              ? { background: "rgba(255,255,255,0.05)", color: "#5B6B82" }
+                              : { background: `linear-gradient(135deg, ${C.cyan}, ${C.green})`, color: "#04121A" }
+                          }
+                        >
+                          {item.claimed ? "Claimed" : "Claim"}
+                        </button>
+                      </div>
+                    )}
+                  </GlowCard>
+                );
+              })}
             </div>
           )}
         </GlowCard>
