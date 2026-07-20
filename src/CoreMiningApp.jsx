@@ -878,7 +878,7 @@ function ProfileMenuTile({ icon: Icon, label, accent, showDot, onClick, classNam
       <GlowCard
         accent={accent}
         brackets
-        className="p-2 flex flex-col items-center justify-center gap-1 text-center transition-transform duration-150 active:scale-[0.95]"
+        className="p-1.5 flex flex-col items-center justify-center gap-0.5 text-center transition-transform duration-150 active:scale-[0.95]"
       >
         <div
           className="absolute inset-x-3 top-0 h-px"
@@ -886,21 +886,21 @@ function ProfileMenuTile({ icon: Icon, label, accent, showDot, onClick, classNam
         />
         {showDot && (
           <span
-            className="absolute top-2 right-2 w-2 h-2 rounded-full"
+            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
             style={{ background: C.green, boxShadow: `0 0 6px 1px ${C.green}` }}
           />
         )}
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center"
+          className="w-6 h-6 rounded-lg flex items-center justify-center"
           style={{
             background: `radial-gradient(circle, ${accent}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
             boxShadow: `inset 0 0 0 1px ${accent}66`,
             filter: `drop-shadow(0 0 8px ${accent}cc) drop-shadow(0 0 16px ${accent}55)`,
           }}
         >
-          <Icon size={16} color={accent} />
+          <Icon size={13} color={accent} />
         </div>
-        <span className="text-white text-[11px] font-semibold leading-tight">{label}</span>
+        <span className="text-white text-[9px] font-semibold leading-tight">{label}</span>
       </GlowCard>
     </button>
   );
@@ -911,14 +911,14 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
     <GlowCard
       accent={accent}
       brackets
-      className="p-2.5 flex flex-col items-center text-center transition-transform duration-150 active:scale-[0.95]"
+      className="p-1.5 flex flex-col items-center text-center transition-transform duration-150 active:scale-[0.95]"
     >
       <div
         className="absolute inset-x-3 top-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
       />
       <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center mb-1.5"
+        className="w-8 h-8 rounded-lg flex items-center justify-center mb-1"
         style={{
           background: `radial-gradient(circle, ${accent}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
           boxShadow: `inset 0 0 0 1px ${accent}66`,
@@ -927,20 +927,20 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
       >
         {icon}
       </div>
-      <p className="text-white text-[11px] font-bold leading-tight w-full truncate">{title}</p>
+      <p className="text-white text-[10px] font-bold leading-tight w-full truncate">{title}</p>
       {rarityLabel && (
-        <p className="text-[9px] font-bold tracking-wide mt-0.5" style={{ color: accent }}>
+        <p className="text-[8px] font-bold tracking-wide mt-0.5" style={{ color: accent }}>
           {rarityLabel}
         </p>
       )}
-      {stat && <div className="flex flex-wrap justify-center gap-1 mt-1.5">{stat}</div>}
+      {stat && <div className="flex flex-wrap justify-center gap-1 mt-1">{stat}</div>}
       <p
-        className="text-white text-[10px] font-semibold tabular-nums mt-2 px-2 py-1 rounded-md w-full"
+        className="text-white text-[9px] font-semibold tabular-nums mt-1.5 px-1.5 py-0.5 rounded-md w-full"
         style={{ background: "rgba(255,255,255,0.05)" }}
       >
         {price}
       </p>
-      <div className="w-full mt-1.5">{action}</div>
+      <div className="w-full mt-1">{action}</div>
     </GlowCard>
   );
 }
@@ -4603,7 +4603,7 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
           {owned.length}/{MAX_RIGS}
         </p>
       </div>
-      <div className="px-4 grid grid-cols-2 gap-3">
+      <div className="px-4 grid grid-cols-3 gap-2">
         {owned.map((r) => {
           const rar = RARITY_STYLE[r.rarity];
           const dur = r.durability ?? 100;
@@ -4615,7 +4615,7 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
               key={r.id}
               accent={rar.color}
               brackets
-              className="p-3 relative transition-transform duration-150 active:scale-[0.97]"
+              className="p-2 relative transition-transform duration-150 active:scale-[0.97]"
             >
               <div
                 className="absolute inset-x-3 top-0 h-px"
@@ -4626,43 +4626,43 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   e.stopPropagation();
                   onSetFeatured(isFeatured ? null : r.id);
                 }}
-                className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center"
+                className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full flex items-center justify-center"
                 style={{
                   background: isFeatured ? `${C.cyan}33` : "rgba(255,255,255,0.06)",
                   border: `1px solid ${isFeatured ? C.cyan : "#2a3346"}`,
                 }}
                 title="Feature on Home"
               >
-                <Star size={12} color={isFeatured ? C.cyan : "#5B6B82"} fill={isFeatured ? C.cyan : "none"} />
+                <Star size={10} color={isFeatured ? C.cyan : "#5B6B82"} fill={isFeatured ? C.cyan : "none"} />
               </button>
               <button onClick={() => onSelect(r)} className="text-left w-full">
-                <div className="flex items-center justify-center h-16 relative">
+                <div className="flex items-center justify-center h-11 relative">
                   <div
-                    className="absolute w-14 h-14 rounded-xl"
+                    className="absolute w-10 h-10 rounded-xl"
                     style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
                   />
-                  <RigIcon rigKey={r.key} rarity={r.rarity} size={52} />
+                  <RigIcon rigKey={r.key} rarity={r.rarity} size={38} />
                 </div>
-                <p className="text-white text-xs font-bold mt-2">{r.name}</p>
-                <p className="text-[10px] mb-0.5" style={{ color: rar.color }}>Lv.{r.level} · {rar.label}</p>
-                <p className="text-[10px] mb-1.5" style={{ color: C.cyan }}>
+                <p className="text-white text-[10px] font-bold mt-1 truncate">{r.name}</p>
+                <p className="text-[9px] mb-0.5 truncate" style={{ color: rar.color }}>Lv.{r.level} · {rar.label}</p>
+                <p className="text-[9px] mb-1" style={{ color: C.cyan }}>
                   {fmt(r.basePower * (1 + (r.level - 1) * 0.18) * ((r.durability ?? 100) / 100))} TH/s
                 </p>
                 <div className="flex items-center gap-1 mb-1">
                   <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${dur}%`, background: durColor }} />
                   </div>
-                  <span className="text-[9px] tabular-nums" style={{ color: durColor }}>{Math.round(dur)}%</span>
+                  <span className="text-[8px] tabular-nums" style={{ color: durColor }}>{Math.round(dur)}%</span>
                 </div>
-                <p className="text-[9px]" style={{ color: C.purple }}>
-                  {filledSlots}/{(r.slots || []).length} component slots
+                <p className="text-[8px] truncate" style={{ color: C.purple }}>
+                  {filledSlots}/{(r.slots || []).length} slots
                 </p>
-                <p className="text-[9px] flex items-center gap-1 mt-0.5" style={{ color: C.orange }}>
-                  <Zap size={8} /> {RIG_CATALOG.find((c) => c.key === r.key)?.kwh ?? 1} kWh/hr
+                <p className="text-[8px] flex items-center gap-1 mt-0.5" style={{ color: C.orange }}>
+                  <Zap size={7} /> {RIG_CATALOG.find((c) => c.key === r.key)?.kwh ?? 1} kWh/hr
                 </p>
                 {dur <= 0 && (
-                  <p className="text-[9px] mt-1 flex items-center gap-1" style={{ color: "#FF7A7A" }}>
-                    <Wrench size={9} /> Needs repair
+                  <p className="text-[8px] mt-1 flex items-center gap-1" style={{ color: "#FF7A7A" }}>
+                    <Wrench size={8} /> Repair
                   </p>
                 )}
               </button>
@@ -4670,7 +4670,7 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
           );
         })}
         {owned.length === 0 && (
-          <p className="text-slate-500 text-xs col-span-2 text-center mt-8">
+          <p className="text-slate-500 text-xs col-span-3 text-center mt-8">
             No rigs yet — visit the Market to get started.
           </p>
         )}
@@ -4683,7 +4683,7 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
             None in stock — buy components in Market, then install them onto a rig from the Upgrade tab.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {stockEntries.map(([key, units]) => {
               const c = COMPONENT_CATALOG.find((x) => x.key === key);
               if (!c) return null;
@@ -4694,37 +4694,37 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   key={key}
                   accent={rar.color}
                   brackets
-                  className="p-3 relative transition-transform duration-150 active:scale-[0.97]"
+                  className="p-2 relative transition-transform duration-150 active:scale-[0.97]"
                 >
                   <div
                     className="absolute inset-x-3 top-0 h-px"
                     style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
                   />
                   <span
-                    className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1 py-0.5 rounded-full"
                     style={{ background: `${rar.color}22`, color: rar.color }}
                   >
                     x{units.length}
                   </span>
-                  <div className="flex items-center justify-center h-16 relative">
+                  <div className="flex items-center justify-center h-11 relative">
                     <div
-                      className="absolute w-14 h-14 rounded-xl"
+                      className="absolute w-10 h-10 rounded-xl"
                       style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
                     />
-                    <ComponentIcon compKey={c.key} rarity={c.rarity} size={52} />
+                    <ComponentIcon compKey={c.key} rarity={c.rarity} size={38} />
                   </div>
-                  <p className="text-white text-xs font-bold mt-2">{c.name}</p>
-                  <p className="text-[10px]" style={{ color: rar.color }}>
+                  <p className="text-white text-[10px] font-bold mt-1 truncate">{c.name}</p>
+                  <p className="text-[9px] truncate" style={{ color: rar.color }}>
                     +{c.boostPct}% · {rar.label}
                   </p>
-                  <div className="flex flex-wrap gap-1 mt-1.5">
+                  <div className="flex flex-wrap gap-1 mt-1">
                     {sorted.map((u) => {
                       const d = Math.round(u.durability ?? 100);
                       const dColor = d <= 0 ? "#FF5252" : d < 30 ? C.orange : C.green;
                       return (
                         <span
                           key={u.id}
-                          className="text-[9px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full"
+                          className="text-[8px] font-semibold tabular-nums px-1 py-0.5 rounded-full"
                           style={{ background: `${dColor}18`, color: dColor }}
                         >
                           {d}%
@@ -4746,7 +4746,7 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
             None yet — earn materials from Quests (Profile tab).
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {MATERIAL_CATALOG.filter((m) => materialInventory[m.key] > 0).map((m) => {
               const rar = RARITY_STYLE[m.rarity];
               return (
@@ -4754,27 +4754,27 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   key={m.key}
                   accent={rar.color}
                   brackets
-                  className="p-3 relative transition-transform duration-150 active:scale-[0.97]"
+                  className="p-2 relative transition-transform duration-150 active:scale-[0.97]"
                 >
                   <div
                     className="absolute inset-x-3 top-0 h-px"
                     style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
                   />
                   <span
-                    className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1 py-0.5 rounded-full"
                     style={{ background: `${rar.color}22`, color: rar.color }}
                   >
                     ×{materialInventory[m.key]}
                   </span>
-                  <div className="flex items-center justify-center h-16 relative">
+                  <div className="flex items-center justify-center h-11 relative">
                     <div
-                      className="absolute w-14 h-14 rounded-xl"
+                      className="absolute w-10 h-10 rounded-xl"
                       style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
                     />
-                    <MaterialIcon materialKey={m.key} rarity={m.rarity} size={48} />
+                    <MaterialIcon materialKey={m.key} rarity={m.rarity} size={34} />
                   </div>
-                  <p className="text-white text-xs font-bold mt-2">{m.name}</p>
-                  <p className="text-[10px]" style={{ color: rar.color }}>{rar.label}</p>
+                  <p className="text-white text-[10px] font-bold mt-1 truncate">{m.name}</p>
+                  <p className="text-[9px]" style={{ color: rar.color }}>{rar.label}</p>
                 </GlowCard>
               );
             })}
@@ -4827,7 +4827,7 @@ function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, 
             <ShopCard
               key={recipe.key}
               accent={rar.color}
-              icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={30} />}
+              icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={22} />}
               title={comp.name}
               rarityLabel={rar.label}
               stat={[
@@ -4893,7 +4893,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
     });
   };
   const SortBar = () => (
-    <div className="col-span-2 flex items-center gap-2 -mt-0.5 mb-0.5">
+    <div className="col-span-3 flex items-center gap-2 -mt-0.5 mb-0.5">
       <span className="text-[10px] text-slate-500 font-semibold">Sort:</span>
       {[["rarity", "Rarity"], ["price", "Price"]].map(([key, label]) => (
         <button
@@ -4931,7 +4931,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
         ))}
       </div>
 
-      <div className="px-4 grid grid-cols-2 gap-2.5 mt-2">
+      <div className="px-4 grid grid-cols-3 gap-2 mt-2">
         {filter === "Rigs" ? (
           <>
             <SortBar />
@@ -4943,7 +4943,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 <ShopCard
                   key={rig.key}
                   accent={rar.color}
-                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={30} />}
+                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={22} />}
                   title={rig.name}
                   rarityLabel={rar.label}
                   stat={[
@@ -4977,7 +4977,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 <ShopCard
                   key={comp.key}
                   accent={rar.color}
-                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={30} />}
+                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={22} />}
                   title={comp.name}
                   rarityLabel={rar.label}
                   stat={[
@@ -5011,7 +5011,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 <ShopCard
                   key={boost.key}
                   accent={rar.color}
-                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={30} />}
+                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={22} />}
                   title={boost.name}
                   rarityLabel={rar.label}
                   stat={[
@@ -5042,7 +5042,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               <ShopCard
                 key={pack.key}
                 accent={rar.color}
-                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={30} />}
+                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={22} />}
                 title={pack.name}
                 rarityLabel={rar.label}
                 stat={[<Chip key="amount" color={C.orange}>+{pack.amount} kWh</Chip>]}
@@ -5063,7 +5063,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
           })
         ) : filter === "Kits" ? (
           <>
-            <p className="col-span-2 text-[10px] text-slate-500 -mt-0.5 mb-0.5">
+            <p className="col-span-3 text-[10px] text-slate-500 -mt-0.5 mb-0.5">
               Mining Kits bundle a rig + GPU + energy at a discount — paid in real TON, sent directly to the treasury wallet.
             </p>
             {BUNDLE_CATALOG.map((bundle) => {
@@ -5075,7 +5075,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 ? "Connect your TON wallet first"
                 : null;
               return (
-                <div key={bundle.key} className="col-span-2">
+                <div key={bundle.key} className="col-span-3">
                   <BundleCard
                     bundle={bundle}
                     onBuy={() => onBuyBundle(bundle)}
@@ -5088,7 +5088,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
             })}
           </>
         ) : (
-          <p className="text-slate-500 text-xs text-center mt-10 col-span-2">
+          <p className="text-slate-500 text-xs text-center mt-10 col-span-3">
             {filter} coming soon.
           </p>
         )}
@@ -6611,7 +6611,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
         </GlowCard>
       </div>
 
-      <div className="px-4 grid grid-cols-4 gap-1.5 mt-1.5 pb-1">
+      <div className="px-4 grid grid-cols-4 gap-1 mt-1.5 pb-1">
         {tiles.map((t) => (
           <ProfileMenuTile
             key={t.label}
