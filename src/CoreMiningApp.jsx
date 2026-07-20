@@ -808,7 +808,7 @@ function GlowCard({ children, className = "", accent = C.cyan, style = {}, brack
 function Chip({ children, color = "#8FA3B8", bg }) {
   return (
     <span
-      className="inline-flex items-center text-[9px] font-bold px-1.5 py-[3px] rounded-full whitespace-nowrap leading-none"
+      className="inline-flex items-center text-[8px] font-bold px-1 py-[2px] rounded-full whitespace-nowrap leading-none"
       style={{ background: bg ?? `${color}17`, color }}
     >
       {children}
@@ -927,13 +927,18 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
       >
         {icon}
       </div>
-      <p className="text-white text-[10px] font-bold leading-tight w-full truncate">{title}</p>
+      <p
+        className="text-white text-[10px] font-bold leading-tight w-full"
+        style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.2em" }}
+      >
+        {title}
+      </p>
       {rarityLabel && (
-        <p className="text-[8px] font-bold tracking-wide mt-0.5" style={{ color: accent }}>
+        <p className="text-[8px] font-bold tracking-wide uppercase" style={{ color: accent }}>
           {rarityLabel}
         </p>
       )}
-      {stat && <div className="flex flex-wrap justify-center gap-1 mt-1">{stat}</div>}
+      {stat && <div className="flex flex-wrap justify-center gap-1 mt-1 min-h-[14px]">{stat}</div>}
       <p
         className="text-white text-[9px] font-semibold tabular-nums mt-1.5 px-1.5 py-0.5 rounded-md w-full"
         style={{ background: "rgba(255,255,255,0.05)" }}
@@ -956,75 +961,76 @@ function BundleCard({ bundle, onBuy, disabled, disabledReason, sending }) {
   if (!rig || !comp) return null;
   const normalTon = Math.round((normalPrice / DEPOSIT_CORE_PER_TON) * 10) / 10;
   return (
-    <GlowCard accent={rar.color} brackets className="p-4 relative overflow-hidden">
+    <GlowCard accent={rar.color} brackets className="p-2 relative overflow-hidden">
       <div
         className="absolute inset-x-3 top-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${rar.color}aa, transparent)` }}
       />
-      <span
-        className="absolute top-3 right-3 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-        style={{ color: "#0A1220", background: rar.color, boxShadow: `0 0 10px -1px ${rar.color}` }}
-      >
-        -{discountPct}% OFF
-      </span>
-
-      <div className="flex items-center gap-3 pr-14">
+      <div className="flex items-center gap-2">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
           style={{
             background: `radial-gradient(circle, ${rar.color}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
             boxShadow: `inset 0 0 0 1px ${rar.color}66`,
-            filter: `drop-shadow(0 0 10px ${rar.color}cc) drop-shadow(0 0 20px ${rar.color}55)`,
+            filter: `drop-shadow(0 0 8px ${rar.color}cc)`,
           }}
         >
-          <Package size={28} color={rar.color} />
+          <Package size={18} color={rar.color} />
         </div>
-        <div className="min-w-0">
-          <p className="text-[9px] font-bold tracking-wide" style={{ color: rar.color }}>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-1">
+            <p className="text-white font-extrabold text-[11px] leading-tight truncate">{bundle.name}</p>
+            <span
+              className="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full"
+              style={{ color: "#0A1220", background: rar.color }}
+            >
+              -{discountPct}%
+            </span>
+          </div>
+          <p className="text-[8px] font-bold tracking-wide" style={{ color: rar.color }}>
             {rar.label.toUpperCase()} KIT
           </p>
-          <p className="text-white font-extrabold text-sm leading-snug truncate">{bundle.name}</p>
         </div>
       </div>
 
-      <p className="text-[10px] text-slate-500 leading-relaxed mt-2">{bundle.desc}</p>
+      <p className="text-[9px] text-slate-500 leading-snug mt-1 truncate">{bundle.desc}</p>
 
-      <div className="flex items-center gap-1.5 mt-3">
-        <div className="rounded-lg p-1" style={{ background: "rgba(255,255,255,0.04)" }}>
-          <RigIcon rigKey={rig.key} rarity={rig.rarity} size={28} />
+      <div className="flex items-center gap-1 mt-1.5">
+        <div className="rounded-md p-0.5" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <RigIcon rigKey={rig.key} rarity={rig.rarity} size={18} />
         </div>
-        <Plus size={11} color="#5B6B82" className="shrink-0" />
-        <div className="rounded-lg p-1" style={{ background: "rgba(255,255,255,0.04)" }}>
-          <ComponentIcon compKey={comp.key} rarity={comp.rarity} size={28} />
+        <Plus size={9} color="#5B6B82" className="shrink-0" />
+        <div className="rounded-md p-0.5" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <ComponentIcon compKey={comp.key} rarity={comp.rarity} size={18} />
         </div>
-        <Plus size={11} color="#5B6B82" className="shrink-0" />
+        <Plus size={9} color="#5B6B82" className="shrink-0" />
         <div
-          className="w-[28px] h-[28px] rounded-lg flex items-center justify-center shrink-0"
+          className="w-[18px] h-[18px] rounded-md flex items-center justify-center shrink-0"
           style={{ background: `linear-gradient(155deg, ${C.orange}2E, #0A1220)`, border: `1px solid ${C.orange}66` }}
         >
-          <Zap size={14} color={C.orange} />
+          <Zap size={10} color={C.orange} />
         </div>
-        <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: C.orange }}>
+        <span className="text-[9px] font-bold whitespace-nowrap" style={{ color: C.orange }}>
           +{bundle.energyAmount} kWh
         </span>
       </div>
 
       <div
-        className="flex items-center justify-between gap-2 mt-3 pt-3"
+        className="flex items-center justify-between gap-2 mt-1.5 pt-1.5"
         style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
       >
-        <div>
-          <p className="text-[10px] text-slate-500 line-through tabular-nums">{fmt(normalTon, 1)} TON</p>
-          <p className="text-white text-sm font-extrabold tabular-nums">
+        <div className="leading-tight">
+          <p className="text-[9px] text-slate-500 line-through tabular-nums">{fmt(normalTon, 1)} TON</p>
+          <p className="text-white text-xs font-extrabold tabular-nums">
             {fmt(tonPrice, 1)} <span style={{ color: rar.color }}>TON</span>
           </p>
         </div>
-        <FuturisticButton onClick={onBuy} disabled={disabled || sending} accent={rar.color} accent2={C.blue} size="sm">
-          {sending ? "Sending…" : "Buy with TON"}
+        <FuturisticButton onClick={onBuy} disabled={disabled || sending} accent={rar.color} accent2={C.blue} size="xs" full={false} className="px-3">
+          {sending ? "Sending…" : "Buy"}
         </FuturisticButton>
       </div>
       {disabled && disabledReason && (
-        <p className="text-[9px] mt-1.5 text-center" style={{ color: C.orange }}>
+        <p className="text-[8px] mt-1 text-center" style={{ color: C.orange }}>
           {disabledReason}
         </p>
       )}
@@ -2132,13 +2138,17 @@ function FuturisticButton({
   className = "",
 }) {
   const grad2 = accent2 || C.blue;
-  const pad = size === "sm" ? "10px 16px" : "13px 20px";
-  const clip = "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)";
+  const pad = size === "xs" ? "5px 6px" : size === "sm" ? "10px 16px" : "13px 20px";
+  const textSize = size === "xs" ? "text-[9px] tracking-wide" : "text-xs tracking-widest";
+  const clip =
+    size === "xs"
+      ? "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)"
+      : "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)";
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`relative group overflow-hidden font-bold tracking-widest uppercase text-xs transition-transform duration-150 active:scale-[0.97] ${full ? "w-full" : ""} ${className}`}
+      className={`relative group overflow-hidden font-bold uppercase ${textSize} transition-transform duration-150 active:scale-[0.97] ${full ? "w-full" : ""} ${className}`}
       style={{
         padding: pad,
         clipPath: clip,
@@ -4852,7 +4862,7 @@ function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, 
                     disabled={!canAfford}
                     accent={rar.color}
                     accent2={C.blue}
-                    size="sm"
+                    size="xs"
                   >
                     Craft
                   </FuturisticButton>
@@ -4957,7 +4967,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                       disabled={!canAfford}
                       accent={rar.color}
                       accent2={C.blue}
-                      size="sm"
+                      size="xs"
                     >
                       {atCap ? `${MAX_RIGS}/${MAX_RIGS}` : "Buy"}
                     </FuturisticButton>
@@ -4991,7 +5001,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                       disabled={!canAfford}
                       accent={rar.color}
                       accent2={C.blue}
-                      size="sm"
+                      size="xs"
                     >
                       Buy
                     </FuturisticButton>
@@ -5025,7 +5035,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                       disabled={!canAfford}
                       accent={rar.color}
                       accent2={C.orange}
-                      size="sm"
+                      size="xs"
                     >
                       {isActive ? "Extend" : "Activate"}
                     </FuturisticButton>
@@ -5053,7 +5063,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                     disabled={isFull || !canAfford}
                     accent={C.orange}
                     accent2={rar.color}
-                    size="sm"
+                    size="xs"
                   >
                     {isFull ? "Full" : "Buy"}
                   </FuturisticButton>
