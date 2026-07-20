@@ -1827,7 +1827,7 @@ function RigDevice({ rig, fill = false }) {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-xl flex items-center justify-center"
+      className="relative w-full overflow-hidden rounded-xl flex flex-col items-center justify-center"
       style={{
         ...(fill ? { height: "100%" } : { aspectRatio: "16/9" }),
         background: "linear-gradient(160deg, #101A2C, #05070E)",
@@ -1838,107 +1838,128 @@ function RigDevice({ rig, fill = false }) {
     >
       <div
         className="absolute inset-0"
-        style={{ background: `radial-gradient(circle at 50% 78%, ${glowColor}${filled.length ? "33" : "1A"}, transparent 60%)` }}
+        style={{ background: `radial-gradient(circle at 50% 55%, ${glowColor}${filled.length ? "33" : "1A"}, transparent 60%)` }}
       />
-      {/* glowing floor the chassis appears to hover above */}
-      <div
-        className="absolute left-1/2 bottom-[14%] pointer-events-none"
-        style={{
-          width: "48%",
-          height: "12px",
-          borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${glowColor}${filled.length ? "AA" : "66"} 0%, ${glowColor}44 45%, transparent 75%)`,
-          filter: "blur(2px)",
-          animation: `core-floor-glow ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
-        }}
-      />
-      <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-[14%] pointer-events-none"
-        style={{
-          width: "32%",
-          height: "3px",
-          borderRadius: "50%",
-          background: glowColor,
-          boxShadow: `0 0 10px 2px ${glowColor}`,
-          opacity: filled.length ? 0.9 : 0.5,
-        }}
-      />
-      {/* Outer wrapper handles the up/down hover-float; inner wrapper spins
-          independently so the two motions don't fight over `transform`. */}
-      <div
-        style={{
-          position: "relative",
-          width: "82%",
-          aspectRatio: "1/0.72",
-          animation: `core-hover ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
-        }}
-      >
+      {/* Scene wrapper: cube + its floor-glow live in the same centered flex
+          column, so they move and center together as one unit. Previously
+          the floor was pinned to a fixed % of the *outer* container while
+          the cube was independently flex-centered — on a tall card the two
+          drifted apart, leaving a large dead gap above the status pill. */}
+      <div className="relative flex flex-col items-center" style={{ width: "84%" }}>
+        {/* Outer wrapper handles the up/down hover-float; inner wrapper spins
+            independently so the two motions don't fight over `transform`. */}
         <div
           style={{
             position: "relative",
             width: "100%",
-            height: "100%",
-            transformStyle: "preserve-3d",
-            transformOrigin: "50% 50%",
-            animation: `core-turntable ${filled.length ? "9s" : "16s"} linear infinite`,
+            aspectRatio: "1/0.72",
+            animation: `core-hover ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
           }}
         >
-          <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: "visible" }}>
-            <defs>
-              <linearGradient id={`${uid}-top`} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#3A4A66" />
-                <stop offset="100%" stopColor="#1C2740" />
-              </linearGradient>
-              <linearGradient id={`${uid}-front`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#141D33" />
-                <stop offset="100%" stopColor="#0A0F1E" />
-              </linearGradient>
-              <linearGradient id={`${uid}-side`} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#0A0F1C" />
-                <stop offset="100%" stopColor="#050810" />
-              </linearGradient>
-            </defs>
-            {/* side face */}
-            <polygon points="50,46 85,28 85,68 50,86" fill={`url(#${uid}-side)`} stroke={glowColor} strokeOpacity="0.3" strokeWidth="1.5" />
-            {/* front face */}
-            <polygon points="15,28 50,46 50,86 15,68" fill={`url(#${uid}-front)`} stroke={glowColor} strokeOpacity="0.4" strokeWidth="1.5" />
-            {/* top face */}
-            <polygon points="50,10 85,28 50,46 15,28" fill={`url(#${uid}-top)`} stroke={glowColor} strokeOpacity="0.55" strokeWidth="1.5" />
-            {/* slot cells on the front face, one per rig component slot */}
-            {cellPositions.map(([cx, cy], i) => {
-              const slot = slots[i];
-              const comp = slot ? COMPONENT_CATALOG.find((c) => c.key === slot.key) : null;
-              const cellColor = comp ? RARITY_STYLE[comp.rarity].color : "#2A3550";
-              return (
-                <rect
-                  key={i}
-                  x={cx - 6}
-                  y={cy - 5}
-                  width="12"
-                  height="10"
-                  rx="2.5"
-                  fill={comp ? `${cellColor}33` : "rgba(255,255,255,0.03)"}
-                  stroke={cellColor}
-                  strokeWidth={comp ? 1.4 : 1}
-                  strokeOpacity={comp ? 0.9 : 0.35}
-                  style={comp ? { filter: `drop-shadow(0 0 4px ${cellColor}AA)` } : undefined}
-                />
-              );
-            })}
-            {/* status LED on the top face */}
-            <circle
-              cx="50"
-              cy="24"
-              r="2.6"
-              fill={filled.length ? glowColor : "#3A4560"}
-              style={filled.length ? { animation: "core-led-pulse 1.6s ease-in-out infinite" } : undefined}
-            />
-          </svg>
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              height: "100%",
+              transformStyle: "preserve-3d",
+              transformOrigin: "50% 50%",
+              animation: `core-turntable ${filled.length ? "9s" : "16s"} linear infinite`,
+            }}
+          >
+            <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: "visible" }}>
+              <defs>
+                <linearGradient id={`${uid}-top`} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#3A4A66" />
+                  <stop offset="100%" stopColor="#1C2740" />
+                </linearGradient>
+                <linearGradient id={`${uid}-front`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#141D33" />
+                  <stop offset="100%" stopColor="#0A0F1E" />
+                </linearGradient>
+                <linearGradient id={`${uid}-side`} x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#0A0F1C" />
+                  <stop offset="100%" stopColor="#050810" />
+                </linearGradient>
+              </defs>
+              {/* side face */}
+              <polygon points="50,46 85,28 85,68 50,86" fill={`url(#${uid}-side)`} stroke={glowColor} strokeOpacity="0.3" strokeWidth="1.5" />
+              {/* front face */}
+              <polygon points="15,28 50,46 50,86 15,68" fill={`url(#${uid}-front)`} stroke={glowColor} strokeOpacity="0.4" strokeWidth="1.5" />
+              {/* top face */}
+              <polygon points="50,10 85,28 50,46 15,28" fill={`url(#${uid}-top)`} stroke={glowColor} strokeOpacity="0.55" strokeWidth="1.5" />
+              {/* slot cells on the front face, one per rig component slot */}
+              {cellPositions.map(([cx, cy], i) => {
+                const slot = slots[i];
+                const comp = slot ? COMPONENT_CATALOG.find((c) => c.key === slot.key) : null;
+                const cellColor = comp ? RARITY_STYLE[comp.rarity].color : "#2A3550";
+                return (
+                  <rect
+                    key={i}
+                    x={cx - 6}
+                    y={cy - 5}
+                    width="12"
+                    height="10"
+                    rx="2.5"
+                    fill={comp ? `${cellColor}33` : "rgba(255,255,255,0.03)"}
+                    stroke={cellColor}
+                    strokeWidth={comp ? 1.4 : 1}
+                    strokeOpacity={comp ? 0.9 : 0.35}
+                    style={comp ? { filter: `drop-shadow(0 0 4px ${cellColor}AA)` } : undefined}
+                  />
+                );
+              })}
+              {/* status LED on the top face */}
+              <circle
+                cx="50"
+                cy="24"
+                r="2.6"
+                fill={filled.length ? glowColor : "#3A4560"}
+                style={filled.length ? { animation: "core-led-pulse 1.6s ease-in-out infinite" } : undefined}
+              />
+            </svg>
+          </div>
         </div>
+        {/* glowing floor the chassis appears to hover above — now stacked
+            directly beneath the cube in normal flow instead of absolutely
+            anchored to the container edge, so it always tracks the cube. */}
+        <div
+          className="pointer-events-none"
+          style={{
+            marginTop: "-8%",
+            width: "58%",
+            height: "12px",
+            borderRadius: "50%",
+            background: `radial-gradient(ellipse, ${glowColor}${filled.length ? "AA" : "66"} 0%, ${glowColor}44 45%, transparent 75%)`,
+            filter: "blur(2px)",
+            animation: `core-floor-glow ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
+          }}
+        />
+        <div
+          className="pointer-events-none"
+          style={{
+            marginTop: "-9px",
+            width: "38%",
+            height: "3px",
+            borderRadius: "50%",
+            background: glowColor,
+            boxShadow: `0 0 10px 2px ${glowColor}`,
+            opacity: filled.length ? 0.9 : 0.5,
+          }}
+        />
       </div>
       <div className="absolute top-2.5 left-4 text-[10px] font-extrabold tracking-[0.2em] text-white/60">
         CORE
       </div>
+      {/* Rig name/level badge, matching the photo variant (RigHero) so both
+          look consistent whether or not the rig has a custom image. */}
+      {rig && (
+        <div
+          className="absolute top-2.5 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+          style={{ background: "rgba(5,7,14,0.7)", border: `1px solid ${glowColor}66`, color: glowColor }}
+        >
+          {rig.name} · Lv.{rig.level}
+        </div>
+      )}
       <div
         className="absolute bottom-3 left-4 flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold"
         style={
