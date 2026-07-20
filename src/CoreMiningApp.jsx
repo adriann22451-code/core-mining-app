@@ -13,20 +13,27 @@ import {
 // ---------------------------------------------------------------------------
 // TOKENS
 // ---------------------------------------------------------------------------
+// Gold/amber "luxury" theme — every screen's cards, buttons and accents
+// pull from these tokens, so retheming here cascades app-wide. Item rarity
+// colors are intentionally NOT derived from this palette (see RARITY_STYLE
+// above) so they stay distinct regardless of the general UI theme.
 const C = {
-  cyan: "#00E5FF",
-  blue: "#0A6DFF",
-  orange: "#FFB300",
-  green: "#00FFAB",
-  purple: "#8F5CFF",
+  cyan: "#FFD966", // primary bright gold accent (was cyan)
+  blue: "#C98A2C", // secondary bronze accent (was blue)
+  orange: "#FFB300", // amber — unchanged, already gold
+  green: "#D4AF37", // "success/positive" accent, classic gold (was green)
+  purple: "#8A5A2B", // deep bronze/copper accent (was purple)
   white: "#FFFFFF",
 };
 
+// Item/rig rarity colors are kept as fixed literals (not tied to the C
+// palette) so common/rare/epic/legendary stay visually distinct no matter
+// what the general UI theme (C) is set to.
 const RARITY_STYLE = {
   common: { color: "#8FA3B8", label: "Common" },
-  rare: { color: C.cyan, label: "Rare" },
-  epic: { color: C.purple, label: "Epic" },
-  legendary: { color: C.orange, label: "Legendary" },
+  rare: { color: "#00E5FF", label: "Rare" },
+  epic: { color: "#8F5CFF", label: "Epic" },
+  legendary: { color: "#FFB300", label: "Legendary" },
 };
 
 // ---------------------------------------------------------------------------
@@ -3846,11 +3853,11 @@ export default function CoreMiningApp() {
       className="relative w-full max-w-[420px] mx-auto h-dvh flex flex-col overflow-hidden"
       style={{
         background:
-          "linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px) 0 0/100% 26px, " +
-          "linear-gradient(90deg, rgba(0,229,255,0.05) 1px, transparent 1px) 0 0/26px 100%, " +
-          "radial-gradient(circle at 50% -10%, rgba(10,109,255,0.22), transparent 45%), " +
+          "linear-gradient(rgba(255,217,102,0.05) 1px, transparent 1px) 0 0/100% 26px, " +
+          "linear-gradient(90deg, rgba(255,217,102,0.05) 1px, transparent 1px) 0 0/26px 100%, " +
+          "radial-gradient(circle at 50% -10%, rgba(201,138,44,0.22), transparent 45%), " +
           "radial-gradient(circle at 90% 8%, rgba(255,179,0,0.12), transparent 40%), " +
-          "radial-gradient(circle at 10% 95%, rgba(143,92,255,0.14), transparent 40%), " +
+          "radial-gradient(circle at 10% 95%, rgba(138,90,43,0.16), transparent 40%), " +
           "#05070E",
         fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif",
       }}
@@ -3872,9 +3879,9 @@ export default function CoreMiningApp() {
           50% { transform: translate(10px, -14px) scale(1.08); }
         }
         @keyframes core-pulse-ring {
-          0% { box-shadow: 0 0 0 0 rgba(0,229,255,0.45); }
-          70% { box-shadow: 0 0 0 14px rgba(0,229,255,0); }
-          100% { box-shadow: 0 0 0 0 rgba(0,229,255,0); }
+          0% { box-shadow: 0 0 0 0 rgba(255,179,0,0.45); }
+          70% { box-shadow: 0 0 0 14px rgba(255,179,0,0); }
+          100% { box-shadow: 0 0 0 0 rgba(255,179,0,0); }
         }
         @keyframes core-float {
           0%, 100% { transform: rotateX(38deg) rotateZ(-32deg) translateY(0px); }
@@ -7704,7 +7711,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
       for (let ring = 1; ring <= 3; ring++) {
         ctx.beginPath();
         ctx.arc(hub.x, hub.y, ring * Math.min(width, height) * 0.14, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(0,229,255,${0.07 - ring * 0.015})`;
+        ctx.strokeStyle = `rgba(255,217,102,${0.07 - ring * 0.015})`;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
@@ -7713,9 +7720,9 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
         ? ctx.createConicGradient(sweepAngle, hub.x, hub.y)
         : null;
       if (grad) {
-        grad.addColorStop(0, "rgba(0,229,255,0.16)");
-        grad.addColorStop(0.06, "rgba(0,229,255,0)");
-        grad.addColorStop(1, "rgba(0,229,255,0)");
+        grad.addColorStop(0, "rgba(255,217,102,0.16)");
+        grad.addColorStop(0.06, "rgba(255,217,102,0)");
+        grad.addColorStop(1, "rgba(255,217,102,0)");
         ctx.beginPath();
         ctx.moveTo(hub.x, hub.y);
         ctx.arc(hub.x, hub.y, sweepR, 0, Math.PI * 2);
@@ -7731,7 +7738,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
-        ctx.strokeStyle = "rgba(90,140,220,0.12)";
+        ctx.strokeStyle = "rgba(201,138,44,0.12)";
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -7742,7 +7749,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
         ctx.beginPath();
         ctx.moveTo(hub.x, hub.y);
         ctx.lineTo(p.x, p.y);
-        ctx.strokeStyle = "rgba(0,229,255,0.10)";
+        ctx.strokeStyle = "rgba(255,217,102,0.10)";
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -7752,7 +7759,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
       ctx.beginPath();
       ctx.moveTo(hub.x, hub.y);
       ctx.lineTo(you.x, you.y);
-      ctx.strokeStyle = "rgba(0,255,171,0.35)";
+      ctx.strokeStyle = "rgba(212,175,55,0.35)";
       ctx.lineWidth = 1.4;
       ctx.stroke();
 
@@ -7774,7 +7781,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
         const x = sx + (ex - sx) * k;
         const y = sy + (ey - sy) * k;
         const fade = Math.sin(Math.min(prog, 1) * Math.PI);
-        const color = p.isYou ? "0,255,171" : p.type === "mesh" ? "120,170,255" : "0,229,255";
+        const color = p.isYou ? "212,175,55" : p.type === "mesh" ? "201,138,44" : "255,217,102";
         ctx.beginPath();
         ctx.arc(x, y, p.isYou ? 2.6 : 1.9, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${color},${0.9 * fade})`;
@@ -7790,8 +7797,8 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
         const p = project(n, t / 1000);
         ctx.beginPath();
         ctx.arc(p.x, p.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(120,170,255,0.85)";
-        ctx.shadowColor = "rgba(0,229,255,0.6)";
+        ctx.fillStyle = "rgba(201,138,44,0.85)";
+        ctx.shadowColor = "rgba(255,217,102,0.6)";
         ctx.shadowBlur = 4;
         ctx.fill();
         ctx.shadowBlur = 0;
@@ -7802,7 +7809,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
       const yourPulse = 1 + 0.25 * Math.sin(t / 260);
       ctx.beginPath();
       ctx.arc(yp.x, yp.y, nodes[0].r * yourPulse + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(0,255,171,0.35)";
+      ctx.strokeStyle = "rgba(212,175,55,0.35)";
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.beginPath();
@@ -7817,7 +7824,7 @@ function NetworkGraphVisual({ activeMiners, hashrateTotal }) {
       const hubPulse = 1 + 0.08 * Math.sin(t / 500);
       ctx.beginPath();
       ctx.arc(hub.x, hub.y, 9 * hubPulse, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(0,229,255,0.5)";
+      ctx.strokeStyle = "rgba(255,217,102,0.5)";
       ctx.lineWidth = 1.2;
       ctx.stroke();
       ctx.beginPath();
