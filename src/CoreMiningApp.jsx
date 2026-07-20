@@ -2667,6 +2667,20 @@ export default function CoreMiningApp() {
   // durability wear all catch up exactly like they would have if the app
   // had stayed open.
   const lastTickRef = useRef(savedGame.lastActiveAt ?? Date.now());
+  // Whether the value above came from a *real* local save, or just the
+  // Date.now() fallback for a device with no localStorage entry yet (a
+  // fresh install, or — the cross-device bug — the same account opened on
+  // a different phone). Needed below to merge the server's lastActiveAt
+  // correctly: if this device has no real checkpoint of its own, the
+  // server's timestamp should be used outright; if it does, we take the
+  // more recent of the two so a session on another device can't get its
+  // already-synced earnings double-counted.
+  const hasLocalTimestampRef = useRef(typeof savedGame.lastActiveAt === "number");
+  // Guards the offline catch-up tick (below) so it doesn't fire using the
+  // Date.now() fallback before the one-time server-progress fetch has had
+  // a chance to arrive and correct lastTickRef.current — see the tick
+  // effect and the server-load effect further down.
+  const serverProgressResolvedRef = useRef(false);
   // Was: dailyStreak defaulted to 3 with lastClaimDate defaulted to
   // "yesterday", so dailyCurrentDay = (3 % 7) + 1 = 4 for every new user —
   // the daily bonus opened straight to Day 4 instead of Day 1. Defaulting
@@ -2851,6 +2865,19 @@ export default function CoreMiningApp() {
     if (typeof p.notificationsOn === "boolean") setNotificationsOn(p.notificationsOn);
     if (typeof p.language === "string") setLanguage(p.language);
     if (typeof p.welcomeGrantClaimed === "boolean") setWelcomeGrantClaimed(p.welcomeGrantClaimed);
+    // Cross-device offline catch-up fix: p.lastActiveAt is when this
+    // account's progress was last synced FROM ANY DEVICE. On a brand-new
+    // device (no local save), lastTickRef only had Date.now() to fall back
+    // on, so the very first tick always computed ~0 elapsed time and no
+    // offline mining ever got credited. Use the server's timestamp instead
+    // — outright if this device has no real checkpoint of its own, or the
+    // more recent of the two otherwise (so a session that already synced
+    // from another device can't be double-credited).
+    if (typeof p.lastActiveAt === "number" && p.lastActiveAt > 0) {
+      lastTickRef.current = hasLocalTimestampRef.current
+        ? Math.max(lastTickRef.current, p.lastActiveAt)
+        : p.lastActiveAt;
+    }
   }, []);
 
   // Load from the server once, on first mount inside Telegram. The server
@@ -2858,10 +2885,23 @@ export default function CoreMiningApp() {
   // it's the cross-device source of truth. If there's no server copy yet
   // (brand-new player) or the request fails, we just keep using local state.
   useEffect(() => {
-    if (!isTelegram || !initData || hasLoadedServerProgressRef.current) return;
+    if (!isTelegram || !initData) {
+      // No server check will ever happen for this session (outside
+      // Telegram, or initData not ready yet) — don't hold up the tick
+      // effect's offline catch-up waiting on something that isn't coming.
+      serverProgressResolvedRef.current = true;
+      return;
+    }
+    if (hasLoadedServerProgressRef.current) return;
     hasLoadedServerProgressRef.current = true;
+    // Safety net: if the request hangs (rather than failing fast), don't
+    // block offline-catchup forever — fall back to whatever local timestamp
+    // we already have after a few seconds.
+    const timeoutId = setTimeout(() => { serverProgressResolvedRef.current = true; }, 6000);
     apiLoadPlayer(initData).then((progress) => {
       if (progress) applyServerProgress(progress);
+      clearTimeout(timeoutId);
+      serverProgressResolvedRef.current = true;
     });
   }, [isTelegram, initData, applyServerProgress]);
 
@@ -2873,7 +2913,12 @@ export default function CoreMiningApp() {
     if (!isTelegram || !initData) return;
     const sync = () => {
       const delta = Math.max(0, persistRef.current.totalEarned - lastSyncedTotalEarnedRef.current);
-      apiSavePlayer(initData, persistRef.current, delta);
+      // lastActiveAt wasn't previously included in what got sent to the
+      // server at all — only the localStorage copy had it. That's the root
+      // cause of the cross-device bug: a different phone loading this
+      // account's progress had no way to know when it was last active, so
+      // it always assumed "just now" and credited zero offline mining.
+      apiSavePlayer(initData, { ...persistRef.current, lastActiveAt: Date.now() }, delta);
       lastSyncedTotalEarnedRef.current = persistRef.current.totalEarned;
     };
     const id = setInterval(sync, 5000);
@@ -3194,6 +3239,18 @@ export default function CoreMiningApp() {
     let firstTick = true;
     const id = setInterval(() => {
       const now = Date.now();
+      // Hold off on advancing/consuming the catch-up clock until the
+      // one-time server-progress check (if any) has resolved — otherwise,
+      // on a fresh device, this would tick lastTickRef.current forward
+      // using the Date.now() mount-time fallback before applyServerProgress
+      // ever gets a chance to correct it with the real cross-device
+      // lastActiveAt, silently erasing the offline gap we're trying to
+      // credit. Regular UI ticking (nowTick) still updates every second.
+      if (!serverProgressResolvedRef.current) {
+        lastTickRef.current = now;
+        setNowTick(now);
+        return;
+      }
       const rawDeltaHours = Math.max(0, (now - lastTickRef.current) / 3600000);
       const deltaHours = Math.min(rawDeltaHours, MAX_CATCHUP_HOURS);
       lastTickRef.current = now;
