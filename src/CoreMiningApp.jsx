@@ -1860,7 +1860,7 @@ function RigDevice({ rig, fill = false }) {
       <div
         style={{
           position: "relative",
-          width: "62%",
+          width: "82%",
           aspectRatio: "1/0.72",
           animation: `core-hover ${filled.length ? "3.2s" : "4.5s"} ease-in-out infinite`,
         }}
@@ -1997,7 +1997,7 @@ function RigHero({ rig, fill = false }) {
       <img
         src={photo}
         alt={rig.name}
-        className="absolute inset-0 w-full h-full object-contain p-3"
+        className="absolute inset-0 w-full h-full object-contain p-1"
         style={{
           filter: `drop-shadow(0 8px 20px rgba(0,0,0,0.55)) drop-shadow(0 0 18px ${rar.color}33)`,
           animation: "core-hover 3.6s ease-in-out infinite",
@@ -4176,7 +4176,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
   const energyColor = energy <= 0 ? "#FF7A7A" : energyPct <= 0.25 ? C.orange : C.green;
 
   return (
-    <div className="h-full flex flex-col px-4 pt-3">
+    <div className="flex flex-col px-4 pt-3" style={{ height: "calc(100dvh - 80px)" }}>
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -4231,17 +4231,16 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="relative mt-2" style={{ height: "70vh" }}>
+      <div className="flex-1 min-h-0 relative mt-2">
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
-          className="p-2"
-          style={{ height: "100%", boxSizing: "border-box" }}
+          className="absolute inset-0 p-2"
         >
           <div
             onTouchStart={onHeroTouchStart}
             onTouchEnd={onHeroTouchEnd}
-            style={{ height: "100%" }}
+            className="absolute inset-2"
           >
             <RigHero rig={currentRig} fill />
           </div>
