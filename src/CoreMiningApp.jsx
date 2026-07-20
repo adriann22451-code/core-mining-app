@@ -790,14 +790,49 @@ function GlowCard({ children, className = "", accent = C.cyan, style = {}, brack
     <div
       className={`${hasPositionOverride ? "" : "relative "}rounded-2xl border ${className}`}
       style={{
-        background: `linear-gradient(165deg, ${accent}3D 0%, ${accent}14 32%, rgba(10,14,24,0.95) 62%, rgba(7,10,19,0.97) 100%)`,
-        borderColor: `${accent}4D`,
-        boxShadow: `0 0 0 1px rgba(255,255,255,0.02) inset, 0 8px 24px -12px ${accent}66`,
+        background: `linear-gradient(165deg, ${accent}59 0%, ${accent}24 30%, rgba(10,14,24,0.95) 64%, rgba(7,10,19,0.97) 100%)`,
+        borderColor: `${accent}70`,
+        boxShadow: `0 0 0 1px rgba(255,255,255,0.02) inset, 0 8px 24px -12px ${accent}80`,
         ...style,
       }}
     >
       {brackets && <CornerBrackets accent={accent} />}
       {children}
+    </div>
+  );
+}
+
+// Compact version of the Home tab's RigHero "showcase" look — a bordered,
+// glowing frame with a radial backdrop and a glowing floor ellipse under
+// whatever sits inside (an icon, a photo). Used to give Shop/Inventory item
+// cards the same glowing-visual feel as the big rig hero on Home, just
+// scaled down to fit inside a grid tile instead of a full-width hero.
+function ItemShowcase({ accent, height = 56, className = "", children }) {
+  return (
+    <div
+      className={`relative w-full overflow-hidden rounded-xl shrink-0 ${className}`}
+      style={{
+        height,
+        border: `1px solid ${accent}44`,
+        boxShadow: `0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 16px -6px ${accent}77`,
+      }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{ background: `radial-gradient(circle at 50% 38%, ${accent}2E, #05070E 80%)` }}
+      />
+      <div
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{
+          bottom: "14%",
+          width: "48%",
+          height: 6,
+          borderRadius: "50%",
+          background: `radial-gradient(ellipse, ${accent}AA 0%, ${accent}44 45%, transparent 75%)`,
+          filter: "blur(1.5px)",
+        }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">{children}</div>
     </div>
   );
 }
@@ -824,8 +859,8 @@ function ShopRow({ accent, icon, title, rarityLabel, badges, chips, price, price
   return (
     <GlowCard accent={accent} brackets className="p-3">
       <div
-        className="absolute inset-x-3 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
+        className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}cc, transparent)` }}
       />
       <div className="flex items-start gap-2.5">
         {icon}
@@ -881,25 +916,18 @@ function ProfileMenuTile({ icon: Icon, label, accent, showDot, onClick, classNam
         className="p-1.5 flex flex-col items-center justify-center gap-0.5 text-center transition-transform duration-150 active:scale-[0.95]"
       >
         <div
-          className="absolute inset-x-3 top-0 h-px"
-          style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
+          className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${accent}cc, transparent)` }}
         />
         {showDot && (
           <span
-            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
+            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full z-10"
             style={{ background: C.green, boxShadow: `0 0 6px 1px ${C.green}` }}
           />
         )}
-        <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center"
-          style={{
-            background: `radial-gradient(circle, ${accent}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
-            boxShadow: `inset 0 0 0 1px ${accent}66`,
-            filter: `drop-shadow(0 0 8px ${accent}cc) drop-shadow(0 0 16px ${accent}55)`,
-          }}
-        >
-          <Icon size={13} color={accent} />
-        </div>
+        <ItemShowcase accent={accent} height={34} className="mb-0.5">
+          <Icon size={15} color={accent} />
+        </ItemShowcase>
         <span className="text-white text-[9px] font-semibold leading-tight">{label}</span>
       </GlowCard>
     </button>
@@ -914,19 +942,12 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
       className="p-1.5 flex flex-col items-center text-center transition-transform duration-150 active:scale-[0.95]"
     >
       <div
-        className="absolute inset-x-3 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}77, transparent)` }}
+        className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}cc, transparent)` }}
       />
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center mb-1"
-        style={{
-          background: `radial-gradient(circle, ${accent}55, transparent 68%), radial-gradient(circle, rgba(5,8,16,0.65), transparent 75%)`,
-          boxShadow: `inset 0 0 0 1px ${accent}66`,
-          filter: `drop-shadow(0 0 8px ${accent}cc) drop-shadow(0 0 16px ${accent}55)`,
-        }}
-      >
+      <ItemShowcase accent={accent} height={50} className="mb-1">
         {icon}
-      </div>
+      </ItemShowcase>
       <p
         className="text-white text-[10px] font-bold leading-tight w-full"
         style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.2em" }}
@@ -963,8 +984,8 @@ function BundleCard({ bundle, onBuy, disabled, disabledReason, sending }) {
   return (
     <GlowCard accent={rar.color} brackets className="p-2 relative overflow-hidden">
       <div
-        className="absolute inset-x-3 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${rar.color}aa, transparent)` }}
+        className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${rar.color}cc, transparent)` }}
       />
       <div className="flex items-center gap-2">
         <div
@@ -4628,8 +4649,8 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
               className="p-2 relative transition-transform duration-150 active:scale-[0.97]"
             >
               <div
-                className="absolute inset-x-3 top-0 h-px"
-                style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
+                className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+                style={{ background: `linear-gradient(90deg, transparent, ${rar.color}cc, transparent)` }}
               />
               <button
                 onClick={(e) => {
@@ -4646,14 +4667,10 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                 <Star size={10} color={isFeatured ? C.cyan : "#5B6B82"} fill={isFeatured ? C.cyan : "none"} />
               </button>
               <button onClick={() => onSelect(r)} className="text-left w-full">
-                <div className="flex items-center justify-center h-11 relative">
-                  <div
-                    className="absolute w-10 h-10 rounded-xl"
-                    style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
-                  />
-                  <RigIcon rigKey={r.key} rarity={r.rarity} size={38} />
-                </div>
-                <p className="text-white text-[10px] font-bold mt-1 truncate">{r.name}</p>
+                <ItemShowcase accent={rar.color} height={50} className="mb-1">
+                  <RigIcon rigKey={r.key} rarity={r.rarity} size={42} />
+                </ItemShowcase>
+                <p className="text-white text-[10px] font-bold truncate">{r.name}</p>
                 <p className="text-[9px] mb-0.5 truncate" style={{ color: rar.color }}>Lv.{r.level} · {rar.label}</p>
                 <p className="text-[9px] mb-1" style={{ color: C.cyan }}>
                   {fmt(r.basePower * (1 + (r.level - 1) * 0.18) * ((r.durability ?? 100) / 100))} TH/s
@@ -4707,8 +4724,8 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   className="p-2 relative transition-transform duration-150 active:scale-[0.97]"
                 >
                   <div
-                    className="absolute inset-x-3 top-0 h-px"
-                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
+                    className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}cc, transparent)` }}
                   />
                   <span
                     className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1 py-0.5 rounded-full"
@@ -4716,14 +4733,10 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   >
                     x{units.length}
                   </span>
-                  <div className="flex items-center justify-center h-11 relative">
-                    <div
-                      className="absolute w-10 h-10 rounded-xl"
-                      style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
-                    />
-                    <ComponentIcon compKey={c.key} rarity={c.rarity} size={38} />
-                  </div>
-                  <p className="text-white text-[10px] font-bold mt-1 truncate">{c.name}</p>
+                  <ItemShowcase accent={rar.color} height={50} className="mb-1">
+                    <ComponentIcon compKey={c.key} rarity={c.rarity} size={42} />
+                  </ItemShowcase>
+                  <p className="text-white text-[10px] font-bold truncate">{c.name}</p>
                   <p className="text-[9px] truncate" style={{ color: rar.color }}>
                     +{c.boostPct}% · {rar.label}
                   </p>
@@ -4767,8 +4780,8 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   className="p-2 relative transition-transform duration-150 active:scale-[0.97]"
                 >
                   <div
-                    className="absolute inset-x-3 top-0 h-px"
-                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}77, transparent)` }}
+                    className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}cc, transparent)` }}
                   />
                   <span
                     className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1 py-0.5 rounded-full"
@@ -4776,14 +4789,10 @@ function InventoryTab({ owned, onSelect, componentInventory = {}, featuredRigId,
                   >
                     ×{materialInventory[m.key]}
                   </span>
-                  <div className="flex items-center justify-center h-11 relative">
-                    <div
-                      className="absolute w-10 h-10 rounded-xl"
-                      style={{ background: `radial-gradient(circle, ${rar.color}22, transparent 70%)` }}
-                    />
-                    <MaterialIcon materialKey={m.key} rarity={m.rarity} size={34} />
-                  </div>
-                  <p className="text-white text-[10px] font-bold mt-1 truncate">{m.name}</p>
+                  <ItemShowcase accent={rar.color} height={50} className="mb-1">
+                    <MaterialIcon materialKey={m.key} rarity={m.rarity} size={38} />
+                  </ItemShowcase>
+                  <p className="text-white text-[10px] font-bold truncate">{m.name}</p>
                   <p className="text-[9px]" style={{ color: rar.color }}>{rar.label}</p>
                 </GlowCard>
               );
@@ -4837,7 +4846,7 @@ function CraftPanel({ balance, componentInventory = {}, materialInventory = {}, 
             <ShopCard
               key={recipe.key}
               accent={rar.color}
-              icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={22} />}
+              icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={30} />}
               title={comp.name}
               rarityLabel={rar.label}
               stat={[
@@ -4953,7 +4962,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 <ShopCard
                   key={rig.key}
                   accent={rar.color}
-                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={22} />}
+                  icon={<RigIcon rigKey={rig.key} rarity={rig.rarity} size={30} />}
                   title={rig.name}
                   rarityLabel={rar.label}
                   stat={[
@@ -4987,7 +4996,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 <ShopCard
                   key={comp.key}
                   accent={rar.color}
-                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={22} />}
+                  icon={<ComponentIcon compKey={comp.key} rarity={comp.rarity} size={30} />}
                   title={comp.name}
                   rarityLabel={rar.label}
                   stat={[
@@ -5021,7 +5030,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
                 <ShopCard
                   key={boost.key}
                   accent={rar.color}
-                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={22} />}
+                  icon={<BoosterIcon boostKey={boost.key} rarity={boost.rarity} size={30} />}
                   title={boost.name}
                   rarityLabel={rar.label}
                   stat={[
@@ -5052,7 +5061,7 @@ function MarketTab({ balance, filter, setFilter, onBuy, ownedRigCount, component
               <ShopCard
                 key={pack.key}
                 accent={rar.color}
-                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={22} />}
+                icon={<PackIcon packKey={pack.key} rarity={pack.rarity} size={30} />}
                 title={pack.name}
                 rarityLabel={rar.label}
                 stat={[<Chip key="amount" color={C.orange}>+{pack.amount} kWh</Chip>]}
@@ -6913,7 +6922,7 @@ function PoolsTab({ pools, joinedPoolId, miningPower, poolIncomePerHour, onOpenC
           <button className="w-full text-left" onClick={() => onOpenDetail(joinedPool.id)}>
             <GlowCard accent={C.cyan} brackets className="p-4">
               <div
-                className="absolute inset-x-3 top-0 h-px"
+                className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
                 style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}77, transparent)` }}
               />
               <div className="flex items-center justify-between">
@@ -6983,7 +6992,7 @@ function PoolsTab({ pools, joinedPoolId, miningPower, poolIncomePerHour, onOpenC
               <button key={pool.id} className="w-full text-left" onClick={() => onOpenDetail(pool.id)}>
                 <GlowCard accent={C.blue} brackets className="p-3">
                   <div
-                    className="absolute inset-x-3 top-0 h-px"
+                    className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
                     style={{ background: `linear-gradient(90deg, transparent, ${C.blue}77, transparent)` }}
                   />
                   <div className="flex items-center justify-between">
