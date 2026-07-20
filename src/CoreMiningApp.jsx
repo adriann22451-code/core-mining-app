@@ -3956,7 +3956,7 @@ export default function CoreMiningApp() {
         />
       )}
 
-      <div className="relative z-10 flex-1 overflow-y-auto pb-24">
+      <div className="relative z-10 flex-1 overflow-y-auto pb-20">
         {tab === "home" && (
           <HomeTab
             balance={balance}
@@ -4204,7 +4204,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       </div>
 
       {/* Balance + boost badges */}
-      <div className="flex items-end justify-between shrink-0 mt-2.5">
+      <div className="flex items-end justify-between shrink-0 mt-2">
         <div>
           <p className="text-slate-400 text-[10px] mb-0.5 tracking-wide">TOTAL BALANCE</p>
           <div className="flex items-end gap-1.5">
@@ -4231,7 +4231,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="flex-1 min-h-0 mt-3 relative" style={{ minHeight: "44vh" }}>
+      <div className="flex-1 min-h-0 mt-2 relative" style={{ minHeight: "58vh" }}>
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
