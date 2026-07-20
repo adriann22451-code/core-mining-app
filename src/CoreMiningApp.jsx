@@ -4298,7 +4298,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="flex-1 min-h-0 relative mt-2">
+      <div className="flex-1 min-h-0 relative mt-2" style={{ minHeight: "220px" }}>
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
