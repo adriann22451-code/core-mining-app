@@ -971,6 +971,99 @@ function ShopCard({ accent, icon, title, rarityLabel, stat, price, action }) {
   );
 }
 
+// Shared shop-style progress/reward row — used by Missions, Quests, and
+// Achievements. Mirrors ShopRow's visual language (GlowCard, corner
+// brackets, top gradient hairline) instead of each list using its own
+// plain bordered box, so every "claim a reward" card in the app reads as
+// the same UI as the Shop cards.
+function ProgressCard({ accent, title, badge, desc, chips, pct, progressLabel, claimed, complete, onClaim, claimLabel = "Claim", claimedLabel = "Claimed" }) {
+  const color = claimed ? C.green : accent;
+  return (
+    <GlowCard accent={color} brackets className="p-3">
+      <div
+        className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${color}cc, transparent)` }}
+      />
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className="text-white text-xs font-bold leading-snug">{title}</p>
+        {badge}
+      </div>
+      {desc && <p className="text-[10px] text-slate-500 mb-2">{desc}</p>}
+      {chips && chips.length > 0 && <div className="flex flex-wrap gap-1 mb-2">{chips}</div>}
+      <div className="h-1.5 rounded-full bg-white/5 overflow-hidden mb-2">
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, background: claimed ? C.green : `linear-gradient(90deg, ${accent}, ${C.blue})` }}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-slate-400 tabular-nums">{progressLabel}</span>
+        {claimed ? (
+          <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: C.green }}>
+            <Check size={11} /> {claimedLabel}
+          </span>
+        ) : (
+          <button
+            onClick={onClaim}
+            disabled={!complete}
+            className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
+            style={{
+              background: complete ? `${accent}1F` : "transparent",
+              border: `1px solid ${complete ? accent : "#2a3346"}`,
+              color: complete ? accent : "#5B6B82",
+            }}
+          >
+            {claimLabel}
+          </button>
+        )}
+      </div>
+    </GlowCard>
+  );
+}
+
+// Small stat readout tile — GlowCard + brackets + top hairline, so grids of
+// quick stats (Network Status, etc.) read as the same visual system as
+// Shop cards instead of plain bordered boxes.
+function StatTile({ accent = C.blue, icon: Icon, label, value }) {
+  return (
+    <GlowCard accent={accent} brackets className="p-2.5">
+      <div
+        className="absolute inset-x-2 top-0 h-[2px] rounded-t-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}99, transparent)` }}
+      />
+      <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+        {Icon && <Icon size={12} color={accent} />} {label}
+      </div>
+      <p className="text-white font-bold text-sm tabular-nums mt-0.5">{value}</p>
+    </GlowCard>
+  );
+}
+
+// Compact shop-style row for a settings toggle/link — GlowCard + brackets +
+// top hairline + a glowing icon chip, mirroring ShopRow instead of the
+// old plain bordered button rows.
+function SettingsRow({ icon: Icon, label, accent = C.cyan, right, onClick }) {
+  return (
+    <button onClick={onClick} className="w-full text-left">
+      <GlowCard accent={accent} brackets className="p-2.5 flex items-center justify-between gap-2">
+        <div
+          className="absolute inset-x-3 top-0 h-[2px] rounded-t-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${accent}99, transparent)` }}
+        />
+        <span className="flex items-center gap-2 text-[12px] font-semibold text-white min-w-0">
+          <div className="w-[26px] shrink-0">
+            <ItemShowcase accent={accent} height={26}>
+              <Icon size={13} color={accent} />
+            </ItemShowcase>
+          </div>
+          <span className="truncate">{label}</span>
+        </span>
+        <div className="shrink-0">{right}</div>
+      </GlowCard>
+    </button>
+  );
+}
+
 // Promo crate for a bundle deal (top-tier rig + top-tier component + energy,
 // sold together at a discount). Wider than a normal ShopCard so all three
 // contents plus the price comparison fit in one glanceable card — a treasure
@@ -2282,24 +2375,23 @@ function TopBar({ title, onBack, right }) {
 // left, the same pill toggle switch used for "Rig is ON/OFF" in Upgrade.
 function SettingsToggleRow({ icon: Icon, label, isOn, onToggle }) {
   return (
-    <button
+    <SettingsRow
+      icon={Icon}
+      label={label}
+      accent={isOn ? C.cyan : "#5B6B82"}
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
-    >
-      <span className="flex items-center gap-2 text-[12px] font-semibold text-white">
-        <Icon size={15} color={isOn ? C.cyan : "#5B6B82"} /> {label}
-      </span>
-      <span
-        className="relative inline-flex items-center rounded-full transition-colors"
-        style={{ width: 34, height: 18, background: isOn ? C.cyan : "#2a3346" }}
-      >
+      right={
         <span
-          className="absolute rounded-full bg-white transition-all"
-          style={{ width: 14, height: 14, top: 2, left: isOn ? 18 : 2 }}
-        />
-      </span>
-    </button>
+          className="relative inline-flex items-center rounded-full transition-colors"
+          style={{ width: 34, height: 18, background: isOn ? C.cyan : "#2a3346" }}
+        >
+          <span
+            className="absolute rounded-full bg-white transition-all"
+            style={{ width: 14, height: 14, top: 2, left: isOn ? 18 : 2 }}
+          />
+        </span>
+      }
+    />
   );
 }
 
@@ -2307,16 +2399,13 @@ function SettingsToggleRow({ icon: Icon, label, isOn, onToggle }) {
 // Privacy Policy, Terms) — no toggle, just a chevron-style affordance.
 function SettingsLinkRow({ icon: Icon, label, onClick }) {
   return (
-    <button
+    <SettingsRow
+      icon={Icon}
+      label={label}
+      accent={C.cyan}
       onClick={onClick}
-      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
-    >
-      <span className="flex items-center gap-2 text-[12px] font-semibold text-white">
-        <Icon size={15} color="#8FA3B8" /> {label}
-      </span>
-      <ChevronLeft size={14} color="#5B6B82" style={{ transform: "rotate(180deg)" }} />
-    </button>
+      right={<ChevronLeft size={14} color="#5B6B82" style={{ transform: "rotate(180deg)" }} />}
+    />
   );
 }
 
@@ -5794,43 +5883,26 @@ function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onCla
             {DAILY_REWARDS.map((r) => {
               const done = r.day <= doneUpTo;
               const isToday = r.day === currentDay;
-              const borderColor = isToday ? C.cyan : done ? C.green : "#1c2536";
+              const accent = isToday ? C.cyan : done ? C.green : "#3a4658";
               return (
-                <div
+                <GlowCard
                   key={r.day}
-                  className="relative rounded-xl p-2 flex flex-col items-center gap-1"
-                  style={{
-                    background: isToday
-                      ? `linear-gradient(160deg, ${C.cyan}30, rgba(10,14,24,0.92))`
-                      : done
-                      ? `linear-gradient(160deg, ${C.green}22, rgba(10,14,24,0.92))`
-                      : "linear-gradient(160deg, rgba(255,255,255,0.05), rgba(10,14,24,0.92))",
-                    border: `1px solid ${borderColor}`,
-                    boxShadow: isToday
-                      ? `0 0 14px -3px ${C.cyan}AA, inset 0 0 0 1px ${C.cyan}33`
-                      : done
-                      ? `0 0 10px -4px ${C.green}88`
-                      : "none",
-                    animation: isToday && !claimedToday ? "core-pulse-ring 2.4s ease-out infinite" : undefined,
-                  }}
+                  accent={accent}
+                  brackets
+                  className="p-1.5 flex flex-col items-center gap-0.5 text-center"
+                  style={{ animation: isToday && !claimedToday ? "core-pulse-ring 2.4s ease-out infinite" : undefined }}
                 >
                   <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center"
-                    style={{
-                      background: done ? `${C.green}2E` : isToday ? `${C.cyan}2E` : "rgba(255,255,255,0.05)",
-                      filter: done
-                        ? `drop-shadow(0 0 5px ${C.green}99)`
-                        : isToday
-                        ? `drop-shadow(0 0 6px ${C.cyan}bb)`
-                        : "none",
-                    }}
-                  >
+                    className="absolute inset-x-2 top-0 h-[2px] rounded-t-full"
+                    style={{ background: `linear-gradient(90deg, transparent, ${accent}cc, transparent)` }}
+                  />
+                  <ItemShowcase accent={accent} height={30} className="mb-0.5">
                     {done ? (
-                      <Check size={12} color={C.green} />
+                      <Check size={13} color={C.green} />
                     ) : (
-                      <Gift size={12} color={isToday ? C.cyan : "#5B6B82"} />
+                      <Gift size={13} color={isToday ? C.cyan : "#5B6B82"} />
                     )}
-                  </div>
+                  </ItemShowcase>
                   <span className="text-[8px] text-slate-500">Day {r.day}</span>
                   {r.core > 0 && (
                     <span
@@ -5848,7 +5920,7 @@ function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onCla
                       {r.energy} kWh
                     </span>
                   )}
-                </div>
+                </GlowCard>
               );
             })}
           </div>
@@ -5897,51 +5969,22 @@ function MissionsModal({ onClose, missionProgress, missionClaimed, onClaim }) {
               const complete = progress >= m.target;
               const claimed = missionClaimed.includes(m.key);
               return (
-                <div
+                <ProgressCard
                   key={m.key}
-                  className="rounded-xl p-3"
-                  style={{
-                    background: claimed ? `${C.green}0C` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${claimed ? C.green + "44" : "#1c2536"}`,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-white text-xs font-bold">{m.label}</p>
-                    <span className="text-[10px] font-bold" style={{ color: C.orange }}>
+                  accent={C.blue}
+                  title={m.label}
+                  badge={
+                    <span className="text-[10px] font-bold shrink-0" style={{ color: C.orange }}>
                       +{m.reward} CORE
                     </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mb-2">{m.desc}</p>
-                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden mb-2">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: claimed ? C.green : `linear-gradient(90deg, ${C.cyan}, ${C.blue})` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 tabular-nums">
-                      {progress}/{m.target}
-                    </span>
-                    {claimed ? (
-                      <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: C.green }}>
-                        <Check size={11} /> Claimed
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => onClaim(m)}
-                        disabled={!complete}
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-                        style={{
-                          background: complete ? `${C.cyan}1F` : "transparent",
-                          border: `1px solid ${complete ? C.cyan : "#2a3346"}`,
-                          color: complete ? C.cyan : "#5B6B82",
-                        }}
-                      >
-                        Claim
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  }
+                  desc={m.desc}
+                  pct={pct}
+                  progressLabel={`${progress}/${m.target}`}
+                  claimed={claimed}
+                  complete={complete}
+                  onClaim={() => onClaim(m)}
+                />
               );
             })}
           </div>
@@ -5980,64 +6023,28 @@ function QuestsModal({ onClose, metrics, claimed, onClaim }) {
               const pct = Math.min(100, (progress / q.target) * 100);
               const complete = progress >= q.target;
               const isClaimed = claimed.includes(q.key);
+              const chips = q.materials.map((m) => {
+                const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
+                const color = mat ? RARITY_STYLE[mat.rarity].color : C.purple;
+                return (
+                  <Chip key={m.key} color={color}>
+                    {m.qty}× {mat?.name ?? m.key}
+                  </Chip>
+                );
+              });
               return (
-                <div
+                <ProgressCard
                   key={q.key}
-                  className="rounded-xl p-3"
-                  style={{
-                    background: isClaimed ? `${C.green}0C` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isClaimed ? C.green + "44" : "#1c2536"}`,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-white text-xs font-bold">{q.label}</p>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mb-2">{q.desc}</p>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {q.materials.map((m) => {
-                      const mat = MATERIAL_CATALOG.find((x) => x.key === m.key);
-                      const color = mat ? RARITY_STYLE[mat.rarity].color : C.purple;
-                      return (
-                        <span
-                          key={m.key}
-                          className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                          style={{ background: `${color}18`, color }}
-                        >
-                          {m.qty}× {mat?.name ?? m.key}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden mb-2">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: isClaimed ? C.green : `linear-gradient(90deg, ${C.purple}, ${C.blue})` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 tabular-nums">
-                      {q.target <= 1 ? `${Math.round(pct)}%` : `${fmt(progress, 0)}/${fmt(q.target, 0)}`}
-                    </span>
-                    {isClaimed ? (
-                      <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: C.green }}>
-                        <Check size={11} /> Claimed
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => onClaim(q)}
-                        disabled={!complete}
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-                        style={{
-                          background: complete ? `${C.purple}1F` : "transparent",
-                          border: `1px solid ${complete ? C.purple : "#2a3346"}`,
-                          color: complete ? C.purple : "#5B6B82",
-                        }}
-                      >
-                        Claim
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  accent={C.purple}
+                  title={q.label}
+                  desc={q.desc}
+                  chips={chips}
+                  pct={pct}
+                  progressLabel={q.target <= 1 ? `${Math.round(pct)}%` : `${fmt(progress, 0)}/${fmt(q.target, 0)}`}
+                  claimed={isClaimed}
+                  complete={complete}
+                  onClaim={() => onClaim(q)}
+                />
               );
             })}
           </div>
@@ -6105,34 +6112,37 @@ function CodexModal({ onClose }) {
               const rar = RARITY_STYLE[item.rarity];
               const desc = item.desc ?? item.fact;
               return (
-                <div
-                  key={item.key}
-                  className="rounded-xl p-3 flex gap-2.5"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
-                >
-                  {active.iconRender ? (
-                    <div className="shrink-0 flex items-center justify-center">{active.iconRender(item)}</div>
-                  ) : (
-                    <div
-                      className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
-                      style={{ background: `${rar.color}18` }}
-                    >
-                      <Boxes size={18} color={rar.color} />
+                <GlowCard key={item.key} accent={rar.color} brackets className="p-3">
+                  <div
+                    className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+                    style={{ background: `linear-gradient(90deg, transparent, ${rar.color}cc, transparent)` }}
+                  />
+                  <div className="flex gap-2.5">
+                    <div className="w-10 shrink-0">
+                      {active.iconRender ? (
+                        <ItemShowcase accent={rar.color} height={40}>
+                          {active.iconRender(item)}
+                        </ItemShowcase>
+                      ) : (
+                        <ItemShowcase accent={rar.color} height={40}>
+                          <Boxes size={18} color={rar.color} />
+                        </ItemShowcase>
+                      )}
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-white text-xs font-bold">{item.name}</p>
-                      <span className="text-[9px] font-bold" style={{ color: rar.color }}>{rar.label}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-white text-xs font-bold">{item.name}</p>
+                        <span className="text-[9px] font-bold" style={{ color: rar.color }}>{rar.label}</span>
+                      </div>
+                      {item.brand && (
+                        <p className="text-[9px] mt-0.5" style={{ color: "#5B6B82" }}>{item.brand}</p>
+                      )}
+                      {desc && (
+                        <p className="text-[10px] text-slate-400 mt-1 leading-snug">{desc}</p>
+                      )}
                     </div>
-                    {item.brand && (
-                      <p className="text-[9px] mt-0.5" style={{ color: "#5B6B82" }}>{item.brand}</p>
-                    )}
-                    {desc && (
-                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">{desc}</p>
-                    )}
                   </div>
-                </div>
+                </GlowCard>
               );
             })}
           </div>
@@ -6190,49 +6200,22 @@ const AchievementsModal = React.memo(function AchievementsModal({ onClose, metri
                   ? `${fmt(progress, 0)}/${fmt(a.target, 0)} CORE`
                   : `${fmt(progress, 0)}/${a.target}${a.unit ? " " + a.unit : ""}`;
               return (
-                <div
+                <ProgressCard
                   key={a.key}
-                  className="rounded-xl p-3"
-                  style={{
-                    background: isClaimed ? `${C.green}0C` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isClaimed ? C.green + "44" : "#1c2536"}`,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-white text-xs font-bold">{a.label}</p>
-                    <span className="text-[10px] font-bold" style={{ color: C.orange }}>
+                  accent={C.orange}
+                  title={a.label}
+                  badge={
+                    <span className="text-[10px] font-bold shrink-0" style={{ color: C.orange }}>
                       +{a.reward} CORE
                     </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mb-2">{a.desc}</p>
-                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden mb-2">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: isClaimed ? C.green : `linear-gradient(90deg, ${C.orange}, ${C.purple})` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 tabular-nums">{progressLabel}</span>
-                    {isClaimed ? (
-                      <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: C.green }}>
-                        <Check size={11} /> Claimed
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => onClaim(a)}
-                        disabled={!complete}
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-                        style={{
-                          background: complete ? `${C.orange}1F` : "transparent",
-                          border: `1px solid ${complete ? C.orange : "#2a3346"}`,
-                          color: complete ? C.orange : "#5B6B82",
-                        }}
-                      >
-                        Claim
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  }
+                  desc={a.desc}
+                  pct={pct}
+                  progressLabel={progressLabel}
+                  claimed={isClaimed}
+                  complete={complete}
+                  onClaim={() => onClaim(a)}
+                />
               );
             })}
           </div>
@@ -6314,29 +6297,26 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
             Invite friends with your code — earn CORE rewards each time your friend count crosses a milestone below.
           </p>
 
-          <div
-            className="rounded-xl p-3 mb-3 flex items-center justify-between"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
-          >
+          <GlowCard accent={C.green} brackets className="p-3 mb-3 flex items-center justify-between">
+            <div
+              className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+              style={{ background: `linear-gradient(90deg, transparent, ${C.green}cc, transparent)` }}
+            />
             <div>
               <p className="text-[10px] text-slate-500 mb-1">Your referral code</p>
               <span className="text-white font-bold text-sm tracking-widest">{referralCode}</span>
             </div>
             <button
               onClick={onShare}
-              className="text-[10px] font-bold px-3 py-1.5 rounded-lg"
+              className="text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0"
               style={{ background: `${C.green}1F`, border: `1px solid ${C.green}`, color: C.green }}
             >
               Bagikan
             </button>
-          </div>
+          </GlowCard>
 
-          <div
-            className="rounded-xl p-2.5 mb-4"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
-          >
-            <p className="text-[10px] text-slate-500">Total friends invited</p>
-            <p className="text-white font-bold text-sm tabular-nums">{invitedFriends.length}</p>
+          <div className="mb-4">
+            <StatTile accent={C.cyan} icon={Users} label="Total friends invited" value={invitedFriends.length} />
           </div>
 
           <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide">MILESTONE</p>
@@ -6347,46 +6327,21 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
               const complete = invitedFriends.length >= ms.target;
               const isClaimed = milestonesClaimed.includes(ms.key);
               return (
-                <div
-                  key={ms.key}
-                  className="rounded-xl p-2.5 shrink-0"
-                  style={{
-                    width: 128,
-                    background: isClaimed ? `${C.green}0C` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isClaimed ? C.green + "44" : "#1c2536"}`,
-                  }}
-                >
-                  <p className="text-white text-[11px] font-bold leading-tight mb-1 truncate">{ms.label}</p>
-                  <span className="text-[9px] font-bold" style={{ color: C.orange }}>
-                    +{ms.reward} CORE
-                  </span>
-                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden my-1.5">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.min(100, pct)}%`, background: isClaimed ? C.green : `linear-gradient(90deg, ${C.cyan}, ${C.green})` }}
-                    />
-                  </div>
-                  <p className="text-[9px] text-slate-400 tabular-nums mb-1.5">
-                    {progress}/{ms.target} friends
-                  </p>
-                  {isClaimed ? (
-                    <span className="flex items-center justify-center gap-1 text-[9px] font-semibold py-1" style={{ color: C.green }}>
-                      <Check size={10} /> Claimed
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => onClaimMilestone(ms)}
-                      disabled={!complete}
-                      className="w-full text-[9px] font-bold py-1 rounded-lg"
-                      style={{
-                        background: complete ? `${C.green}1F` : "transparent",
-                        border: `1px solid ${complete ? C.green : "#2a3346"}`,
-                        color: complete ? C.green : "#5B6B82",
-                      }}
-                    >
-                      Claim
-                    </button>
-                  )}
+                <div key={ms.key} className="shrink-0" style={{ width: 128 }}>
+                  <ProgressCard
+                    accent={C.green}
+                    title={ms.label}
+                    badge={
+                      <span className="text-[9px] font-bold shrink-0" style={{ color: C.orange }}>
+                        +{ms.reward}
+                      </span>
+                    }
+                    pct={Math.min(100, pct)}
+                    progressLabel={`${progress}/${ms.target}`}
+                    claimed={isClaimed}
+                    complete={complete}
+                    onClaim={() => onClaimMilestone(ms)}
+                  />
                 </div>
               );
             })}
@@ -6401,7 +6356,7 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
               <div
                 key={f.id}
                 className="flex items-center justify-between text-[11px] rounded-lg px-2.5 py-1.5"
-                style={{ background: "rgba(255,255,255,0.02)" }}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
               >
                 <span style={{ color: "#B8C4D6" }}>{f.name}</span>
                 <span className="text-slate-500">{new Date(f.joinedAt).toLocaleDateString()}</span>
@@ -6828,37 +6783,34 @@ function SettingsModal({
           </div>
 
           <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide">{t("settings_language")}</p>
-          <button
-            onClick={() => setShowLangPicker((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl mb-4"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}
-          >
-            <span className="flex items-center gap-2 text-[12px] font-semibold text-white">
-              <Globe size={15} color={C.cyan} /> {t("settings_language_row")}
-            </span>
-            <span className="flex items-center gap-1 text-[11px] text-slate-400">
-              {currentLang.label}
-              <ChevronDown size={14} style={{ transform: showLangPicker ? "rotate(180deg)" : "none" }} />
-            </span>
-          </button>
-          {showLangPicker && (
-            <div className="flex flex-col gap-1 mb-4 -mt-2.5">
-              {SETTINGS_LANGUAGES.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => { onSetLanguage(l.code); setShowLangPicker(false); }}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-semibold"
-                  style={{
-                    background: language === l.code ? `${C.cyan}15` : "transparent",
-                    color: language === l.code ? C.cyan : "#B8C4D6",
-                  }}
-                >
-                  {l.label}
-                  {language === l.code && <Check size={13} />}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="mb-4">
+            <SettingsRow
+              icon={Globe}
+              label={t("settings_language_row")}
+              accent={C.cyan}
+              onClick={() => setShowLangPicker((v) => !v)}
+              right={
+                <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                  {currentLang.label}
+                  <ChevronDown size={14} style={{ transform: showLangPicker ? "rotate(180deg)" : "none" }} />
+                </span>
+              }
+            />
+            {showLangPicker && (
+              <div className="flex flex-col gap-1.5 mt-1.5">
+                {SETTINGS_LANGUAGES.map((l) => (
+                  <SettingsRow
+                    key={l.code}
+                    icon={Globe}
+                    label={l.label}
+                    accent={language === l.code ? C.cyan : "#5B6B82"}
+                    onClick={() => { onSetLanguage(l.code); setShowLangPicker(false); }}
+                    right={language === l.code ? <Check size={13} color={C.cyan} /> : null}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
           <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide">{t("settings_support")}</p>
           <div className="flex flex-col gap-1.5 mb-1">
@@ -7907,14 +7859,11 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
       onClick={onClose}
     >
       <div className="w-full max-w-[380px] max-h-[85vh] overflow-y-auto min-h-0" style={{ animation: "core-modal-pop 0.22s ease-out" }} onClick={(e) => e.stopPropagation()}>
-        <div
-          className="relative overflow-hidden rounded-2xl p-5"
-          style={{
-            background: "linear-gradient(160deg, #101B33 0%, #0A0F1E 55%, #060911 100%)",
-            border: `1px solid ${C.blue}44`,
-            boxShadow: "0 30px 60px -25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
-          }}
-        >
+        <GlowCard accent={C.blue} brackets className="p-5">
+          <div
+            className="absolute inset-x-3 top-0 h-[3px] rounded-t-full"
+            style={{ background: `linear-gradient(90deg, transparent, ${C.blue}cc, transparent)` }}
+          />
           <div
             className="absolute -top-16 -right-16 w-56 h-56 rounded-full pointer-events-none"
             style={{ background: `radial-gradient(circle, ${C.blue}22, transparent 70%)` }}
@@ -7964,71 +7913,58 @@ function NetworkStatsModal({ onClose, schedule, networkHashrateTotal, networkRew
           </div>
 
           <div className="grid grid-cols-2 gap-2 mb-3 relative">
-            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                <Users size={12} color={C.green} /> Active Miners
-              </div>
-              <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkActiveMiners, 0)}</p>
-            </div>
-            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                <Gauge size={12} color={C.cyan} /> Network Hashrate
-              </div>
-              <p className="text-white font-bold text-sm tabular-nums mt-0.5">{fmt(networkHashrateTotal, 0)} TH/s</p>
-            </div>
-            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <p className="text-[10px] text-slate-500">Halving Year</p>
-              <p className="text-white font-bold text-sm tabular-nums">Year {schedule.yearNumber}</p>
-            </div>
-            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <p className="text-[10px] text-slate-500">Next Halving</p>
-              <p className="text-white font-bold text-sm tabular-nums">{schedule.daysToHalving}d</p>
-            </div>
-            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <p className="text-[10px] text-slate-500">This Year's Emission</p>
-              <p className="text-white font-bold text-sm tabular-nums">{fmt(schedule.emissionThisYear, 0)}</p>
-            </div>
-            <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1c2536" }}>
-              <p className="text-[10px] text-slate-500">Reward Rate</p>
-              <p className="text-white font-bold text-sm tabular-nums">{networkRewardRate.toFixed(4)}/TH/hr</p>
-            </div>
+            <StatTile accent={C.green} icon={Users} label="Active Miners" value={fmt(networkActiveMiners, 0)} />
+            <StatTile accent={C.cyan} icon={Gauge} label="Network Hashrate" value={`${fmt(networkHashrateTotal, 0)} TH/s`} />
+            <StatTile accent={C.blue} label="Halving Year" value={`Year ${schedule.yearNumber}`} />
+            <StatTile accent={C.blue} label="Next Halving" value={`${schedule.daysToHalving}d`} />
+            <StatTile accent={C.purple} label="This Year's Emission" value={fmt(schedule.emissionThisYear, 0)} />
+            <StatTile accent={C.purple} label="Reward Rate" value={`${networkRewardRate.toFixed(4)}/TH/hr`} />
           </div>
 
-          <div
-            className="rounded-xl p-3 mb-3 relative"
-            style={{ background: `${C.green}0F`, border: `1px solid ${C.green}33` }}
-          >
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">Your network share</span>
-              <span className="font-bold tabular-nums" style={{ color: C.green }}>
-                {yourSharePct.toFixed(4)}%
-              </span>
-            </div>
-            {joinedPool && (
-              <div className="flex items-center justify-between text-[11px] mt-1">
-                <span className="text-slate-400">Pool synergy bonus</span>
-                <span className="font-bold tabular-nums" style={{ color: C.orange }}>
-                  +{poolSynergyBonusPct.toFixed(1)}%
+          <div className="relative mb-3">
+            <GlowCard accent={C.green} brackets className="p-3">
+              <div
+                className="absolute inset-x-3 top-0 h-[2px] rounded-t-full"
+                style={{ background: `linear-gradient(90deg, transparent, ${C.green}cc, transparent)` }}
+              />
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Your network share</span>
+                <span className="font-bold tabular-nums" style={{ color: C.green }}>
+                  {yourSharePct.toFixed(4)}%
                 </span>
               </div>
-            )}
+              {joinedPool && (
+                <div className="flex items-center justify-between text-[11px] mt-1">
+                  <span className="text-slate-400">Pool synergy bonus</span>
+                  <span className="font-bold tabular-nums" style={{ color: C.orange }}>
+                    +{poolSynergyBonusPct.toFixed(1)}%
+                  </span>
+                </div>
+              )}
+            </GlowCard>
           </div>
 
           <p className="text-slate-400 text-[11px] font-semibold mb-2 tracking-wide relative">GENESIS ALLOCATION</p>
-          <div className="flex flex-col gap-1.5 mb-1 relative">
-            {allocRows.map((r) => (
-              <div key={r.label} className="flex items-center justify-between text-[11px]">
-                <span className="flex items-center gap-1.5 text-slate-400">
-                  <span className="w-2 h-2 rounded-full" style={{ background: r.color }} />
-                  {r.label}
-                </span>
-                <span className="tabular-nums text-white">
-                  {r.pct}% · {fmt(r.amount, 0)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+          <GlowCard accent={C.purple} brackets className="p-3 relative">
+            <div
+              className="absolute inset-x-3 top-0 h-[2px] rounded-t-full"
+              style={{ background: `linear-gradient(90deg, transparent, ${C.purple}cc, transparent)` }}
+            />
+            <div className="flex flex-col gap-1.5">
+              {allocRows.map((r) => (
+                <div key={r.label} className="flex items-center justify-between text-[11px]">
+                  <span className="flex items-center gap-1.5 text-slate-400">
+                    <span className="w-2 h-2 rounded-full" style={{ background: r.color }} />
+                    {r.label}
+                  </span>
+                  <span className="tabular-nums text-white">
+                    {r.pct}% · {fmt(r.amount, 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </GlowCard>
+        </GlowCard>
       </div>
     </div>
   );
