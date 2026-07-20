@@ -2503,6 +2503,53 @@ export default function CoreMiningApp() {
   const [showMissionsModal, setShowMissionsModal] = useState(false);
   const missionDateRef = useRef(new Date().toDateString());
 
+  // ---- Inbox / notifications ------------------------------------------------
+  // Bell icon on Home opens an email-inbox-style modal: a list of event/
+  // system messages, some of which carry a claimable CORE/energy reward.
+  // Seeded with a couple of starter messages so the inbox isn't empty on a
+  // fresh install; real events (drops, promos, server announcements) would
+  // get pushed into this same array from the backend later.
+  const [inboxItems, setInboxItems] = useState(
+    savedGame.inboxItems ?? [
+      {
+        id: "welcome",
+        title: "Welcome to CORE",
+        body: "Thanks for joining — here's a starter bonus to help your first rig run longer.",
+        reward: { core: 2, energy: 5 },
+        read: false,
+        claimed: false,
+        ts: Date.now(),
+      },
+      {
+        id: "weekend_event",
+        title: "Weekend Boost Event",
+        body: "Mining income is boosted across the network this weekend. Claim your event bonus before it ends.",
+        reward: { core: 1.5 },
+        read: false,
+        claimed: false,
+        ts: Date.now(),
+      },
+    ]
+  );
+  const [showInboxModal, setShowInboxModal] = useState(false);
+  const unreadInboxCount = inboxItems.filter((n) => !n.read).length;
+
+  const openInbox = () => {
+    haptic("light");
+    setShowInboxModal(true);
+    setInboxItems((items) => items.map((n) => ({ ...n, read: true })));
+  };
+
+  const claimInboxReward = (id) => {
+    const item = inboxItems.find((n) => n.id === id);
+    if (!item || item.claimed || !item.reward) return;
+    haptic("medium");
+    if (item.reward.core) setBalance((b) => b + item.reward.core);
+    if (item.reward.energy) setEnergy((e) => Math.min(MAX_ENERGY_KWH, e + item.reward.energy));
+    setInboxItems((items) => items.map((n) => (n.id === id ? { ...n, claimed: true, read: true } : n)));
+    notify(`Claimed ${[item.reward.core ? `${fmt(item.reward.core)} CORE` : null, item.reward.energy ? `${item.reward.energy} kWh` : null].filter(Boolean).join(" + ")}`);
+  };
+
   // ---- Referral -----------------------------------------------------------
   // Stable per-session code derived from the Telegram user id when available;
   // falls back to a random one in preview mode (outside Telegram).
@@ -2550,7 +2597,7 @@ export default function CoreMiningApp() {
     materialInventory, questClaimed,
     featuredRigId, activeBooster, dailyStreak, lastClaimDate, repairsCount,
     achievementsClaimed, missionProgress, missionClaimed, invitedFriends,
-    referralMilestonesClaimed, pools, joinedPoolId, listings,
+    referralMilestonesClaimed, pools, joinedPoolId, listings, inboxItems,
     musicOn, sfxOn, vibrationOn, notificationsOn, language,
     accountCreatedAt, welcomeGrantClaimed,
   };
@@ -3743,7 +3790,7 @@ export default function CoreMiningApp() {
   return (
     <LanguageContext.Provider value={{ language, t }}>
     <div
-      className="relative w-full max-w-[420px] mx-auto min-h-screen flex flex-col overflow-hidden"
+      className="relative w-full max-w-[420px] mx-auto h-dvh flex flex-col overflow-hidden"
       style={{
         background:
           "linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px) 0 0/100% 26px, " +
@@ -3903,6 +3950,14 @@ export default function CoreMiningApp() {
         />
       )}
 
+      {showInboxModal && (
+        <InboxModal
+          onClose={() => setShowInboxModal(false)}
+          items={inboxItems}
+          onClaim={claimInboxReward}
+        />
+      )}
+
       {showNetworkModal && (
         <NetworkStatsModal
           onClose={() => setShowNetworkModal(false)}
@@ -3981,6 +4036,8 @@ export default function CoreMiningApp() {
             onOpenNetwork={() => { haptic("light"); setShowNetworkModal(true); }}
             user={user}
             onOpenProfile={() => { haptic("light"); setTab("profile"); }}
+            onOpenInbox={openInbox}
+            unreadInboxCount={unreadInboxCount}
           />
         )}
         {tab === "pools" && (
@@ -4123,7 +4180,7 @@ export default function CoreMiningApp() {
 // ---------------------------------------------------------------------------
 // HOME
 // ---------------------------------------------------------------------------
-function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, networkActiveMiners, onOpenNetwork, user, onOpenProfile }) {
+function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, networkActiveMiners, onOpenNetwork, user, onOpenProfile, onOpenInbox, unreadInboxCount = 0 }) {
   const [showEnergyModal, setShowEnergyModal] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
   const boosterMinsLeft = activeBooster ? Math.max(0, Math.round((activeBooster.expiresAt - nowTick) / 60000)) : 0;
@@ -4176,7 +4233,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
   const energyColor = energy <= 0 ? "#FF7A7A" : energyPct <= 0.25 ? C.orange : C.green;
 
   return (
-    <div className="flex flex-col px-4 pt-3" style={{ height: "calc(100dvh - 80px)" }}>
+    <div className="flex flex-col h-full px-4 pt-3">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -4187,7 +4244,17 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
           <button onClick={() => setShowEnergyModal(true)} aria-label="Open energy" className="relative">
             <BatteryMedium size={18} color={energyColor} style={{ filter: `drop-shadow(0 0 5px ${energyColor}88)` }} />
           </button>
-          <Bell size={17} />
+          <button onClick={onOpenInbox} aria-label="Open inbox" className="relative">
+            <Bell size={17} />
+            {unreadInboxCount > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center text-[8px] font-extrabold text-white"
+                style={{ background: C.orange, boxShadow: `0 0 5px ${C.orange}AA` }}
+              >
+                {unreadInboxCount}
+              </span>
+            )}
+          </button>
           <button onClick={onOpenProfile} aria-label="Open profile">
             <div
               className="w-7 h-7 rounded-full border overflow-hidden flex items-center justify-center"
@@ -5525,6 +5592,89 @@ function UpgradeTab({ owned, selected, onSelect, balance, onUpgrade, onRepair, o
 // ---------------------------------------------------------------------------
 // DAILY BONUS
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// INBOX / NOTIFICATIONS — bell icon on Home opens this. Styled like a mail
+// inbox: a scrollable list of messages, unread ones highlighted, and any
+// message carrying a reward gets its own inline Claim button.
+// ---------------------------------------------------------------------------
+function InboxModal({ onClose, items, onClaim }) {
+  const sorted = [...items].sort((a, b) => b.ts - a.ts);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(3,5,10,0.9)", backdropFilter: "blur(3px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[420px] max-h-[80vh] flex flex-col"
+        style={{ animation: "core-modal-pop 0.22s ease-out" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GlowCard accent={C.cyan} brackets className="p-4 flex flex-col min-h-0">
+          <div className="flex items-center justify-between mb-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <Bell size={16} color={C.cyan} />
+              <h2 className="text-white font-extrabold text-sm tracking-wide">INBOX</h2>
+            </div>
+            <button onClick={onClose}>
+              <X size={18} color="#5B6B82" />
+            </button>
+          </div>
+
+          {sorted.length === 0 ? (
+            <p className="text-[12px] text-slate-500 text-center py-8">No messages yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2 overflow-y-auto min-h-0 pr-1">
+              {sorted.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative rounded-xl p-3"
+                  style={{
+                    background: item.read
+                      ? "linear-gradient(160deg, rgba(255,255,255,0.03), rgba(10,14,24,0.9))"
+                      : `linear-gradient(160deg, ${C.cyan}18, rgba(10,14,24,0.92))`,
+                    border: `1px solid ${item.read ? "#1c2536" : `${C.cyan}55`}`,
+                  }}
+                >
+                  {!item.read && (
+                    <span
+                      className="absolute top-3 right-3 w-2 h-2 rounded-full"
+                      style={{ background: C.cyan, boxShadow: `0 0 6px 1px ${C.cyan}` }}
+                    />
+                  )}
+                  <p className="text-white text-[12px] font-bold pr-4">{item.title}</p>
+                  <p className="text-slate-400 text-[11px] mt-1 leading-snug">{item.body}</p>
+
+                  {item.reward && (
+                    <div className="flex items-center justify-between mt-2.5">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold" style={{ color: C.green }}>
+                        {item.reward.core > 0 && <span>+{fmt(item.reward.core)} CORE</span>}
+                        {item.reward.energy > 0 && <span style={{ color: C.orange }}>+{item.reward.energy} kWh</span>}
+                      </div>
+                      <button
+                        onClick={() => onClaim(item.id)}
+                        disabled={item.claimed}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wide"
+                        style={
+                          item.claimed
+                            ? { background: "rgba(255,255,255,0.05)", color: "#5B6B82" }
+                            : { background: `linear-gradient(135deg, ${C.cyan}, ${C.green})`, color: "#04121A" }
+                        }
+                      >
+                        {item.claimed ? "Claimed" : "Claim"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </GlowCard>
+      </div>
+    </div>
+  );
+}
+
 function DailyBonusModal({ onClose, dailyStreak, claimedToday, currentDay, onClaim, balance }) {
   const doneUpTo = claimedToday ? currentDay : currentDay - 1;
   const reward = DAILY_REWARDS[currentDay - 1];
