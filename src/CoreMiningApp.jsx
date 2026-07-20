@@ -485,7 +485,7 @@ function getBundlePricing(bundle) {
   return { rig, comp, normalPrice, price, tonPrice, discountPct };
 }
 
-// 7-day check-in cycle for the Profile "Daily Bonus" tile. Streak wraps back
+// 7-day check-in cycle for the Daily Bonus header icon. Streak wraps back
 // to day 1 after day 7 (and resets to day 1 if a day is missed).
 // Kept deliberately tiny — CORE is meant to be scarce and earned mainly
 // through active mining, not free daily taps.
@@ -4284,6 +4284,8 @@ export default function CoreMiningApp() {
             onOpenProfile={() => { haptic("light"); setTab("profile"); }}
             onOpenInbox={openInbox}
             unreadInboxCount={unreadInboxCount}
+            onOpenDaily={() => { haptic("light"); setShowDailyModal(true); }}
+            dailyClaimAvailable={!claimedToday}
           />
         )}
         {tab === "pools" && (
@@ -4376,8 +4378,6 @@ export default function CoreMiningApp() {
             notify={notify}
             user={user}
             isTelegram={isTelegram}
-            onOpenDaily={() => { haptic("light"); setShowDailyModal(true); }}
-            dailyClaimAvailable={!claimedToday}
             onOpenNetwork={() => { haptic("light"); setShowNetworkModal(true); }}
             onOpenMissions={() => { haptic("light"); setShowMissionsModal(true); }}
             missionsClaimReady={MISSIONS.some(
@@ -4428,7 +4428,7 @@ export default function CoreMiningApp() {
 // ---------------------------------------------------------------------------
 // HOME
 // ---------------------------------------------------------------------------
-function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, networkActiveMiners, onOpenNetwork, user, onOpenProfile, onOpenInbox, unreadInboxCount = 0 }) {
+function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storageCap, miningPower, incomePerHour, onClaim, activeBooster, newMinerBoostActive, newMinerBoostHoursLeft, nowTick, owned, featuredRigId, poolInfo, schedule, networkHashrateTotal, networkActiveMiners, onOpenNetwork, user, onOpenProfile, onOpenInbox, unreadInboxCount = 0, onOpenDaily, dailyClaimAvailable = false }) {
   const [showEnergyModal, setShowEnergyModal] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
   const boosterMinsLeft = activeBooster ? Math.max(0, Math.round((activeBooster.expiresAt - nowTick) / 60000)) : 0;
@@ -4501,6 +4501,15 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         <div className="flex items-center gap-3 text-slate-400">
           <button onClick={() => setShowEnergyModal(true)} aria-label="Open energy" className="relative">
             <BatteryMedium size={18} color={energyColor} style={{ filter: `drop-shadow(0 0 5px ${energyColor}88)` }} />
+          </button>
+          <button onClick={onOpenDaily} aria-label="Open daily bonus" className="relative">
+            <Gift size={17} />
+            {dailyClaimAvailable && (
+              <span
+                className="absolute -top-1.5 -right-1.5 w-[9px] h-[9px] rounded-full"
+                style={{ background: C.orange, boxShadow: `0 0 5px ${C.orange}AA` }}
+              />
+            )}
           </button>
           <button onClick={onOpenInbox} aria-label="Open inbox" className="relative">
             <Bell size={17} />
@@ -6514,11 +6523,10 @@ const ReferralModal = React.memo(function ReferralModal({ onClose, referralCode,
 // ---------------------------------------------------------------------------
 // PROFILE
 // ---------------------------------------------------------------------------
-function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, notify, user, isTelegram, onOpenDaily, dailyClaimAvailable, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenCodex, onOpenSettings, onOpenDeposit, onOpenWithdraw }) {
+function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, notify, user, isTelegram, onOpenNetwork, onOpenMissions, missionsClaimReady, onOpenAchievements, achievementsClaimReady, onOpenReferral, referralClaimReady, onOpenQuests, questsClaimReady, onOpenCodex, onOpenSettings, onOpenDeposit, onOpenWithdraw }) {
   const pct = (xp / xpToNext) * 100;
   const tiles = [
     { icon: Trophy, label: "Achievements", color: C.orange },
-    { icon: Gift, label: "Daily Bonus", color: C.purple },
     { icon: Database, label: "Network", color: C.cyan },
     { icon: Users, label: "Referral", color: C.green },
     { icon: Target, label: "Missions", color: C.blue },
@@ -6536,7 +6544,6 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
 
   const tileHandlers = {
     Achievements: onOpenAchievements,
-    "Daily Bonus": onOpenDaily,
     Network: onOpenNetwork,
     Referral: onOpenReferral,
     Missions: onOpenMissions,
@@ -6545,7 +6552,6 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
   };
   const tileDots = {
     Achievements: achievementsClaimReady,
-    "Daily Bonus": dailyClaimAvailable,
     Referral: referralClaimReady,
     Missions: missionsClaimReady,
     Quests: questsClaimReady,
@@ -6735,7 +6741,7 @@ function ProfileTab({ level, xp, xpToNext, totalEarned, miningPower, balance, no
             accent={t.color}
             showDot={!!tileDots[t.label]}
             onClick={() => (tileHandlers[t.label] ? tileHandlers[t.label]() : notify(`${t.label} opened`))}
-            className={t.label === "Codex" ? "col-span-4" : "col-span-2"}
+            className="col-span-2"
           />
         ))}
       </div>
