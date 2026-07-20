@@ -771,9 +771,17 @@ function CornerBrackets({ accent }) {
 }
 
 function GlowCard({ children, className = "", accent = C.cyan, style = {}, brackets = false }) {
+  // Tailwind's `.relative` rule is emitted after `.absolute` in the
+  // generated stylesheet, so if a caller passes `absolute` (e.g. to make
+  // this card fill an inset-0 parent), the hardcoded `relative` below wins
+  // the cascade regardless of class order in JSX — silently turning the
+  // card back into a non-positioned, zero-height box (this is what was
+  // collapsing the Home rig hero to nothing). Skip the default when the
+  // caller already specifies a position utility.
+  const hasPositionOverride = /(^|\s)(absolute|fixed|sticky|static)(\s|$)/.test(className);
   return (
     <div
-      className={`relative rounded-2xl border ${className}`}
+      className={`${hasPositionOverride ? "" : "relative "}rounded-2xl border ${className}`}
       style={{
         background: `linear-gradient(165deg, ${accent}3D 0%, ${accent}14 32%, rgba(10,14,24,0.95) 62%, rgba(7,10,19,0.97) 100%)`,
         borderColor: `${accent}4D`,
