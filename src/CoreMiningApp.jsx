@@ -4231,13 +4231,18 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
       {/* Rig visual — the hero, gets whatever space is left. Swipeable when
           more than one rig is owned so the full collection is reachable
           without leaving the home tab. */}
-      <div className="flex-1 min-h-0 mt-2 relative" style={{ minHeight: "70vh" }}>
+      <div className="relative mt-2" style={{ height: "70vh" }}>
         <GlowCard
           accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
           brackets
-          className="p-2 h-full"
+          className="p-2"
+          style={{ height: "100%", boxSizing: "border-box" }}
         >
-          <div onTouchStart={onHeroTouchStart} onTouchEnd={onHeroTouchEnd} className="h-full">
+          <div
+            onTouchStart={onHeroTouchStart}
+            onTouchEnd={onHeroTouchEnd}
+            style={{ height: "100%" }}
+          >
             <RigHero rig={currentRig} fill />
           </div>
         </GlowCard>
