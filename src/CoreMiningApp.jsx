@@ -4285,6 +4285,16 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
   const energyPct = MAX_ENERGY_KWH > 0 ? energy / MAX_ENERGY_KWH : 0;
   const energyColor = energy <= 0 ? "#FF7A7A" : energyPct <= 0.25 ? C.orange : C.green;
 
+  // Gold/amber "luxury" palette for the Home tab's cards only — kept local
+  // here rather than added to the shared `C` tokens so it doesn't bleed
+  // into Shop/Inventory/Marketplace, which still use the cyan/green theme.
+  const GOLD = {
+    bright: "#FFD966",
+    amber: "#FFB300",
+    deep: "#C98A2C",
+    line: "#8A6A2F",
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0 px-4 pt-3">
       {/* Header */}
@@ -4353,7 +4363,7 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
           without leaving the home tab. */}
       <div className="relative mt-2" style={{ height: "40vh", minHeight: "260px", flexShrink: 0 }}>
         <GlowCard
-          accent={currentRig ? RARITY_STYLE[currentRig.rarity].color : C.blue}
+          accent={GOLD.amber}
           brackets
           className="absolute inset-0 p-2"
         >
@@ -4397,22 +4407,22 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
 
       {/* Mining power + income, merged into one compact, color-coded card */}
       <div className="shrink-0 mt-2">
-        <GlowCard accent={C.cyan} className="p-1">
+        <GlowCard accent={GOLD.amber} className="p-1">
           <div className="grid grid-cols-2 gap-1">
             <div
               className="rounded-xl px-2.5 py-1.5"
-              style={{ background: `linear-gradient(135deg, ${C.cyan}22, transparent)` }}
+              style={{ background: `linear-gradient(135deg, ${GOLD.bright}22, transparent)` }}
             >
-              <div className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: `${C.cyan}CC` }}>
+              <div className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: `${GOLD.bright}CC` }}>
                 <Gauge size={11} /> POWER
               </div>
               <p className="text-white font-extrabold text-[13px] tabular-nums leading-tight">{fmt(miningPower)} <span className="text-[9px] font-semibold text-slate-400">TH/s</span></p>
             </div>
             <div
               className="rounded-xl px-2.5 py-1.5"
-              style={{ background: `linear-gradient(135deg, ${C.green}22, transparent)` }}
+              style={{ background: `linear-gradient(135deg, ${GOLD.deep}33, transparent)` }}
             >
-              <div className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: `${C.green}CC` }}>
+              <div className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: `${GOLD.amber}CC` }}>
                 <Coins size={11} /> INCOME/HR
               </div>
               <p className="text-white font-extrabold text-[13px] tabular-nums leading-tight">{fmt(incomePerHour)} <span className="text-[9px] font-semibold text-slate-400">CORE</span></p>
@@ -4426,20 +4436,20 @@ function HomeTab({ balance, pending, energy, energyDrainPerHour, storage, storag
         <div
           className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-[10px] font-semibold"
           style={{
-            background: `linear-gradient(100deg, ${C.purple}2A 0%, ${C.blue}1F 55%, #0A0F1E 100%)`,
-            border: `1px solid ${C.purple}44`,
+            background: `linear-gradient(100deg, ${GOLD.deep}2A 0%, ${GOLD.amber}1F 55%, #0A0F1E 100%)`,
+            border: `1px solid ${GOLD.amber}44`,
           }}
         >
           <span className="flex items-center gap-1.5 text-slate-300 truncate">
-            <Users size={12} color={poolInfo ? C.purple : "#8FA3B8"} />
+            <Users size={12} color={poolInfo ? GOLD.bright : "#8FA3B8"} />
             {poolInfo ? `${poolInfo.name} pool · ${poolInfo.feePct}% fee` : "Solo mining"}
           </span>
-          <span className="flex items-center gap-1.5 shrink-0" style={{ color: C.blue }}>
+          <span className="flex items-center gap-1.5 shrink-0" style={{ color: GOLD.amber }}>
             <Database size={11} />
             Y{schedule.yearNumber} · {schedule.percentMined.toFixed(1)}% mined
             <span
               className="w-1.5 h-1.5 rounded-full"
-              style={{ background: C.green, boxShadow: `0 0 6px 2px ${C.green}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
+              style={{ background: GOLD.bright, boxShadow: `0 0 6px 2px ${GOLD.bright}`, animation: "core-pulse-ring 1.6s ease-out infinite" }}
             />
           </span>
         </div>
